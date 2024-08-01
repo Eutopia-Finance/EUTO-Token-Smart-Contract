@@ -57,9 +57,9 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     uint256 public treasuryFee = 5;
     uint256 public buyFeeRFV = 3;
     uint256 public sellFeeTreasuryAdded = 5;
-    uint256 public totalBuyFee = liquidityFee.add(treasuryFee).add(buyFeeRFV);
+    uint256 public totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
     uint256 public totalSellFee =
-        totalBuyFee.add(sellFeeTreasuryAdded);
+        totalBuyFee + sellFeeTreasuryAdded;
     uint256 public feeDenominator = 100;
 
     uint256 targetLiquidity = 50;
@@ -179,7 +179,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             !automatedMarketMakerPairs[msg.sender] &&
             !inSwap &&
             swapEnabled &&
-            totalBuyFee.add(totalSellFee) > 0 &&
+            totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= gonSwapThreshold;
     }
 
@@ -197,7 +197,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     {
         uint256 liquidityBalance = 0;
         for (uint256 i = 0; i < _markerPairs.length; i++) {
-            liquidityBalance.add(balanceOf(_markerPairs[i]).div(10**9));
+            liquidityBalance += balanceOf(_markerPairs[i]).div(10**9);
         }
         return
             accuracy.mul(liquidityBalance.mul(2)).div(
@@ -236,7 +236,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     ) internal returns (bool) {
         uint256 gonAmount = amount.mul(_gonsPerFragment);
         _gonBalances[from] = _gonBalances[from].sub(gonAmount);
-        _gonBalances[to] = _gonBalances[to].add(gonAmount);
+        _gonBalances[to] = _gonBalances[to] + gonAmount;
 
         emit Transfer(from, to, amount);
 
@@ -270,9 +270,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 gonAmountReceived = shouldTakeFee(sender, recipient)
             ? takeFee(sender, recipient, gonAmount)
             : gonAmount;
-        _gonBalances[recipient] = _gonBalances[recipient].add(
-            gonAmountReceived
-        );
+        _gonBalances[recipient] = _gonBalances[recipient] + gonAmountReceived;
 
         emit Transfer(
             sender,
@@ -380,7 +378,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     }
 
     function swapBack() internal swapping {
-        uint256 realTotalFee = totalBuyFee.add(totalSellFee);
+        uint256 realTotalFee = totalBuyFee + totalSellFee;
 
         uint256 dynamicLiquidityFee = isOverLiquified(
             targetLiquidity,
@@ -432,9 +430,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
 
         uint256 feeAmount = gonAmount.mul(_realFee).div(feeDenominator);
 
-        _gonBalances[address(this)] = _gonBalances[address(this)].add(
-            feeAmount
-        );
+        _gonBalances[address(this)] = _gonBalances[address(this)] + feeAmount;
         emit Transfer(sender, address(this), feeAmount.div(_gonsPerFragment));
 
         return gonAmount.sub(feeAmount);
@@ -466,7 +462,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     {
         _allowedFragments[msg.sender][spender] = _allowedFragments[msg.sender][
             spender
-        ].add(addedValue);
+        ] + addedValue;
         emit Approval(
             msg.sender,
             spender,
@@ -507,7 +503,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         if (supplyDelta < 0) {
             _totalSupply = _totalSupply.sub(uint256(-supplyDelta));
         } else {
-            _totalSupply = _totalSupply.add(uint256(supplyDelta));
+            _totalSupply = _totalSupply + uint256(supplyDelta);
         }
 
         if (_totalSupply > MAX_SUPPLY) {
@@ -624,8 +620,8 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         buyFeeRFV = _riskFreeValue;
         treasuryFee = _treasuryFee;
         sellFeeTreasuryAdded = _sellFeeTreasuryAdded;
-        totalBuyFee = liquidityFee.add(treasuryFee).add(buyFeeRFV);
-        totalSellFee = totalBuyFee.add(sellFeeTreasuryAdded);
+        totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
+        totalSellFee = totalBuyFee + sellFeeTreasuryAdded;
 
         require(totalBuyFee <= MAX_FEE_BUY, "Total BUY fee is too high");
         require(totalSellFee <= MAX_FEE_SELL, "Total SELL fee is too high");
