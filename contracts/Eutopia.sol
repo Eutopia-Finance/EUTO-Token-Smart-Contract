@@ -18,11 +18,10 @@ contract Eutopia is
 {
     uint256 public rewardYield;
     uint256 public rewardYieldDenominator;
-
     uint256 public rebaseFrequency;
     uint256 public nextRebase;
 
-    mapping(address => bool) _isFeeExempt;
+    mapping(address => bool) private _isFeeExempt;
 
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
@@ -54,10 +53,10 @@ contract Eutopia is
     uint256 public totalSellFee;
     uint256 public feeDenominator;
 
-    uint256 targetLiquidity;
-    uint256 targetLiquidityDenominator;
+    uint256 public targetLiquidity;
+    uint256 public targetLiquidityDenominator;
 
-    bool inSwap;
+    bool private inSwap;
 
     uint256 private _totalSupply;
     uint256 private _gonsPerFragment;
@@ -67,14 +66,13 @@ contract Eutopia is
     mapping(address => mapping(address => uint256)) private _allowedFragments;
 
     modifier swapping() {
-        require(inSwap == false, "ReentrancyGuard: reentrant call");
         inSwap = true;
         _;
         inSwap = false;
     }
 
     modifier validRecipient(address to) {
-        require(to != address(0x0), "Recipient zero address");
+        require(to != ZERO, "Recipient zero address");
         _;
     }
 
@@ -110,7 +108,7 @@ contract Eutopia is
 
         gonSwapThreshold = TOTAL_GONS / 1000;
 
-        router = IUniswapV2Router02(0x2Bf55D1596786F1AE8160e997D655DbE6d9Bca7A); //mainnet
+        router = IUniswapV2Router02(0x2Bf55D1596786F1AE8160e997D655DbE6d9Bca7A);
 
         pair = IUniswapV2Factory(router.factory()).createPair(
             address(this),
@@ -130,7 +128,7 @@ contract Eutopia is
         _isFeeExempt[address(this)] = true;
         _isFeeExempt[msg.sender] = true;
 
-        emit Transfer(address(0x0), msg.sender, _totalSupply);
+        emit Transfer(ZERO, msg.sender, _totalSupply);
     }
 
     receive() external payable {}
@@ -175,7 +173,7 @@ contract Eutopia is
 
     function shouldSwapBack() internal view returns (bool) {
         return
-            pair != msg.sender &&
+            pair != msg.sender &&//?
             !inSwap &&
             totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= gonSwapThreshold;
@@ -190,10 +188,10 @@ contract Eutopia is
     function getLiquidityBacking(
         uint256 accuracy
     ) public view returns (uint256) {
-        uint256 liquidityBalance = balanceOf(pair) / (10 ** 9);
+        uint256 liquidityBalance = balanceOf(pair) / 10 ** 9;
         return
-            (accuracy * (liquidityBalance * 2)) /
-            (getCirculatingSupply() / (10 ** 9));
+            (accuracy * liquidityBalance * 2) /
+            (getCirculatingSupply() / 10 ** 9);
     }
 
     function isOverLiquified(
@@ -221,8 +219,8 @@ contract Eutopia is
         uint256 amount
     ) internal returns (bool) {
         uint256 gonAmount = amount * _gonsPerFragment;
-        _gonBalances[from] = _gonBalances[from] - gonAmount;
-        _gonBalances[to] = _gonBalances[to] + gonAmount;
+        _gonBalances[from] -= gonAmount;
+        _gonBalances[to] += gonAmount;
 
         emit Transfer(from, to, amount);
 
@@ -244,18 +242,17 @@ contract Eutopia is
             swapBack();
         }
 
-        _gonBalances[sender] = _gonBalances[sender] - gonAmount;
+        _gonBalances[sender] -= gonAmount;
 
         uint256 gonAmountReceived = shouldTakeFee(sender, recipient)
             ? takeFee(sender, recipient, gonAmount)
             : gonAmount;
-        _gonBalances[recipient] = _gonBalances[recipient] + gonAmountReceived;
+        _gonBalances[recipient] += gonAmountReceived;
 
         emit Transfer(sender, recipient, gonAmountReceived / _gonsPerFragment);
 
         if (shouldRebase()) {
             _rebase();
-
             if (pair != sender && pair != recipient) {
                 manualSync();
             }
@@ -332,8 +329,9 @@ contract Eutopia is
             _gonsPerFragment;
 
         uint256 amountToLiquify = (contractTokenBalance *
-            (dynamicLiquidityFee * 2)) / realTotalFee;
-        uint256 amountToRFV = (contractTokenBalance * (buyFeeRFV * 2)) /
+            dynamicLiquidityFee *
+            2) / realTotalFee;
+        uint256 amountToRFV = (contractTokenBalance * buyFeeRFV * 2) /
             realTotalFee;
         uint256 amountToTreasury = contractTokenBalance -
             amountToLiquify -
@@ -369,7 +367,7 @@ contract Eutopia is
 
         uint256 feeAmount = (gonAmount * _realFee) / feeDenominator;
 
-        _gonBalances[address(this)] = _gonBalances[address(this)] + feeAmount;
+        _gonBalances[address(this)] += feeAmount;
         emit Transfer(sender, address(this), feeAmount / _gonsPerFragment);
 
         return gonAmount - feeAmount;
@@ -380,11 +378,9 @@ contract Eutopia is
         uint256 subtractedValue
     ) external returns (bool) {
         uint256 oldValue = _allowedFragments[msg.sender][spender];
-        if (subtractedValue >= oldValue) {
-            _allowedFragments[msg.sender][spender] = 0;
-        } else {
-            _allowedFragments[msg.sender][spender] = oldValue - subtractedValue;
-        }
+        _allowedFragments[msg.sender][spender] = subtractedValue >= oldValue
+            ? 0
+            : oldValue - subtractedValue;
         emit Approval(
             msg.sender,
             spender,
@@ -397,9 +393,7 @@ contract Eutopia is
         address spender,
         uint256 addedValue
     ) external returns (bool) {
-        _allowedFragments[msg.sender][spender] =
-            _allowedFragments[msg.sender][spender] +
-            addedValue;
+        _allowedFragments[msg.sender][spender] += addedValue;
         emit Approval(
             msg.sender,
             spender,
@@ -419,11 +413,9 @@ contract Eutopia is
 
     function _rebase() private {
         if (!inSwap) {
-            //uint256 circulatingSupply = getCirculatingSupply();
             int256 supplyDelta = int256(
                 (_totalSupply * rewardYield) / rewardYieldDenominator
             );
-
             coreRebase(supplyDelta);
         }
     }
@@ -437,9 +429,9 @@ contract Eutopia is
         }
 
         if (supplyDelta < 0) {
-            _totalSupply = _totalSupply - uint256(-supplyDelta);
+            _totalSupply -= uint256(-supplyDelta);
         } else {
-            _totalSupply = _totalSupply + uint256(supplyDelta);
+            _totalSupply += uint256(supplyDelta);
         }
 
         if (_totalSupply > MAX_SUPPLY) {
@@ -458,11 +450,9 @@ contract Eutopia is
         require(!inSwap, "Try again");
         require(nextRebase <= block.timestamp, "Not in time");
 
-        //uint256 circulatingSupply = getCirculatingSupply();
         int256 supplyDelta = int256(
             (_totalSupply * rewardYield) / rewardYieldDenominator
         );
-
         coreRebase(supplyDelta);
         manualSync();
         emit ManualRebase(supplyDelta);
