@@ -81,7 +81,13 @@ contract Eutopia is
         _disableInitializers();
     }
 
-    function initialize(address initialOwner) public initializer {
+    function initialize(
+        address initialOwner,
+        address _router,
+        address _liquidityReceiver,
+        address _treasuryReceiver,
+        address _riskFreeValueReceiver
+    ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
         __Ownable_init(initialOwner);
 
@@ -91,9 +97,9 @@ contract Eutopia is
         rebaseFrequency = 1800;
         nextRebase = block.timestamp + 31536000;
 
-        liquidityReceiver = 0xF52c9341dC4ee92c321Fa11e01E3a6303f9bBe00;
-        treasuryReceiver = 0x6560eD767D6003D779F60BCCD2d7B168Cd4a1583;
-        riskFreeValueReceiver = 0xAf47725C293452Ade77770Bfb6BD2680564DA157;
+        liquidityReceiver = _liquidityReceiver;
+        treasuryReceiver = _treasuryReceiver;
+        riskFreeValueReceiver = _riskFreeValueReceiver;
 
         liquidityFee = 5;
         treasuryFee = 5;
@@ -108,7 +114,7 @@ contract Eutopia is
 
         gonSwapThreshold = TOTAL_GONS / 1000;
 
-        router = IUniswapV2Router02(0x2Bf55D1596786F1AE8160e997D655DbE6d9Bca7A);
+        router = IUniswapV2Router02(_router);
 
         pair = IUniswapV2Factory(router.factory()).createPair(
             address(this),
