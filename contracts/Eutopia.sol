@@ -185,7 +185,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
 
     function getCirculatingSupply() public view returns (uint256) {
         return
-            (TOTAL_GONS.sub(_gonBalances[DEAD]).sub(_gonBalances[ZERO])).div(
+            (TOTAL_GONS - _gonBalances[DEAD] - _gonBalances[ZERO]).div(
                 _gonsPerFragment
             );
     }
@@ -235,7 +235,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 amount
     ) internal returns (bool) {
         uint256 gonAmount = amount.mul(_gonsPerFragment);
-        _gonBalances[from] = _gonBalances[from].sub(gonAmount);
+        _gonBalances[from] = _gonBalances[from] - gonAmount;
         _gonBalances[to] = _gonBalances[to] + gonAmount;
 
         emit Transfer(from, to, amount);
@@ -265,7 +265,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             swapBack();
         }
 
-        _gonBalances[sender] = _gonBalances[sender].sub(gonAmount);
+        _gonBalances[sender] = _gonBalances[sender] - gonAmount;
 
         uint256 gonAmountReceived = shouldTakeFee(sender, recipient)
             ? takeFee(sender, recipient, gonAmount)
@@ -297,10 +297,10 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         address to,
         uint256 value
     ) public override validRecipient(to) returns (bool) {
-        if (_allowedFragments[from][msg.sender] != type(uint256).max) {
-            _allowedFragments[from][msg.sender] = _allowedFragments[from][
-                msg.sender
-            ].sub(value, "Insufficient Allowance");
+        uint256 allowed = _allowedFragments[from][msg.sender];
+        if (allowed != type(uint256).max) {
+            require(allowed >= value, "Insufficient Allowance");
+            _allowedFragments[from][msg.sender] = allowed - value;
         }
 
         _transferFrom(from, to, value);
@@ -309,13 +309,13 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
 
     function _swapAndLiquify(uint256 contractTokenBalance) private {
         uint256 half = contractTokenBalance.div(2);
-        uint256 otherHalf = contractTokenBalance.sub(half);
+        uint256 otherHalf = contractTokenBalance - half;
 
         uint256 initialBalance = address(this).balance;
 
         _swapTokensForBNB(half, address(this));
 
-        uint256 newBalance = address(this).balance.sub(initialBalance);
+        uint256 newBalance = address(this).balance - initialBalance;
 
         _addLiquidity(otherHalf, newBalance);
 
@@ -397,8 +397,8 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             .mul(buyFeeRFV.mul(2))
             .div(realTotalFee);
         uint256 amountToTreasury = contractTokenBalance
-            .sub(amountToLiquify)
-            .sub(amountToRFV);
+            - amountToLiquify
+            - amountToRFV;
 
         if (amountToLiquify > 0) {
             _swapAndLiquify(amountToLiquify);
@@ -433,7 +433,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         _gonBalances[address(this)] = _gonBalances[address(this)] + feeAmount;
         emit Transfer(sender, address(this), feeAmount.div(_gonsPerFragment));
 
-        return gonAmount.sub(feeAmount);
+        return gonAmount - feeAmount;
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue)
@@ -444,9 +444,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         if (subtractedValue >= oldValue) {
             _allowedFragments[msg.sender][spender] = 0;
         } else {
-            _allowedFragments[msg.sender][spender] = oldValue.sub(
-                subtractedValue
-            );
+            _allowedFragments[msg.sender][spender] = oldValue - subtractedValue;
         }
         emit Approval(
             msg.sender,
@@ -501,7 +499,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         }
 
         if (supplyDelta < 0) {
-            _totalSupply = _totalSupply.sub(uint256(-supplyDelta));
+            _totalSupply = _totalSupply - uint256(-supplyDelta);
         } else {
             _totalSupply = _totalSupply + uint256(supplyDelta);
         }
