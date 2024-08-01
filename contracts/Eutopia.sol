@@ -32,8 +32,8 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
     uint256 private constant MAX_SUPPLY = ~uint128(0);
 
-    address DEAD = 0x000000000000000000000000000000000000dEaD;
-    address ZERO = 0x0000000000000000000000000000000000000000;
+    address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    address private constant ZERO = 0x0000000000000000000000000000000000000000;
 
     address public liquidityReceiver =
         0xF52c9341dC4ee92c321Fa11e01E3a6303f9bBe00;
@@ -86,6 +86,33 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     function initialize(address initialOwner) initializer public {
         __ERC20_init("Eutopia", "EUTO");
         __Ownable_init(initialOwner);
+
+        rewardYield = 3958125;
+        rewardYieldDenominator = 10000000000;
+
+        rebaseFrequency = 1800;
+        nextRebase = block.timestamp + 31536000;
+
+        liquidityReceiver =
+            0xF52c9341dC4ee92c321Fa11e01E3a6303f9bBe00;
+        treasuryReceiver =
+            0x6560eD767D6003D779F60BCCD2d7B168Cd4a1583;
+        riskFreeValueReceiver =
+            0xAf47725C293452Ade77770Bfb6BD2680564DA157;
+
+        liquidityFee = 5;
+        treasuryFee = 5;
+        buyFeeRFV = 3;
+        sellFeeTreasuryAdded = 5;
+        totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
+        totalSellFee =
+            totalBuyFee + sellFeeTreasuryAdded;
+        feeDenominator = 100;
+
+        targetLiquidity = 50;
+        targetLiquidityDenominator = 100;
+
+        gonSwapThreshold = TOTAL_GONS  / 1000;
 
         router = IUniswapV2Router02(0x2Bf55D1596786F1AE8160e997D655DbE6d9Bca7A); //mainnet
         
