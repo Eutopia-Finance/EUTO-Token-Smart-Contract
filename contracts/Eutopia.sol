@@ -43,8 +43,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         0x6560eD767D6003D779F60BCCD2d7B168Cd4a1583;
     address public riskFreeValueReceiver =
         0xAf47725C293452Ade77770Bfb6BD2680564DA157;
-    
-    address public usdtToken = 0x55d398326f99059fF775485246999027B3197955; //mainnet
 
     IUniswapV2Router02 public router;
     address public pair;
@@ -97,18 +95,12 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             address(this),
             router.WETH()
         );
-        address pairBusd = IUniswapV2Factory(router.factory()).createPair(
-            address(this),
-            usdtToken
-        );
 
         _allowedFragments[address(this)][address(router)] = type(uint256).max;
         _allowedFragments[address(this)][pair] = type(uint256).max;
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
-        _allowedFragments[address(this)][pairBusd] = type(uint256).max;
 
         setAutomatedMarketMakerPair(pair, true);
-        setAutomatedMarketMakerPair(pairBusd, true);
 
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _gonBalances[msg.sender] = TOTAL_GONS;
@@ -118,10 +110,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         _isFeeExempt[riskFreeValueReceiver] = true;
         _isFeeExempt[address(this)] = true;
         _isFeeExempt[msg.sender] = true;
-
-        IERC20(usdtToken).approve(address(router), type(uint256).max);
-        IERC20(usdtToken).approve(address(pairBusd), type(uint256).max);
-        IERC20(usdtToken).approve(address(this), type(uint256).max);
 
         emit Transfer(address(0x0), msg.sender, _totalSupply);
     }
@@ -320,42 +308,12 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         );
     }
 
-    function _addLiquidityBusd(uint256 tokenAmount, uint256 busdAmount)
-        private
-    {
-        router.addLiquidity(
-            address(this),
-            usdtToken,
-            tokenAmount,
-            busdAmount,
-            0,
-            0,
-            liquidityReceiver,
-            block.timestamp
-        );
-    }
-
     function _swapTokensForBNB(uint256 tokenAmount, address receiver) private {
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = router.WETH();
 
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            tokenAmount,
-            0,
-            path,
-            receiver,
-            block.timestamp
-        );
-    }
-
-    function _swapTokensForBusd(uint256 tokenAmount, address receiver) private {
-        address[] memory path = new address[](3);
-        path[0] = address(this);
-        path[1] = router.WETH();
-        path[2] = usdtToken;
-
-        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             tokenAmount,
             0,
             path,
@@ -642,11 +600,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     event SwapAndLiquify(
         uint256 tokensSwapped,
         uint256 bnbReceived,
-        uint256 tokensIntoLiqudity
-    );
-    event SwapAndLiquifyBusd(
-        uint256 tokensSwapped,
-        uint256 busdReceived,
         uint256 tokensIntoLiqudity
     );
     event LogRebase(uint256 indexed epoch, uint256 totalSupply);
