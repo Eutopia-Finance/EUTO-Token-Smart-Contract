@@ -15,7 +15,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     bool public initialDistributionFinished = false;
     bool public swapEnabled = true;
     bool public autoRebase = false;
-    bool public isLiquidityInBnb = true;
 
     uint256 public rewardYield = 3958125;
     uint256 public rewardYieldDenominator = 10000000000;
@@ -314,29 +313,15 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 half = contractTokenBalance.div(2);
         uint256 otherHalf = contractTokenBalance.sub(half);
 
-        if (isLiquidityInBnb) {
-            uint256 initialBalance = address(this).balance;
+        uint256 initialBalance = address(this).balance;
 
-            _swapTokensForBNB(half, address(this));
+        _swapTokensForBNB(half, address(this));
 
-            uint256 newBalance = address(this).balance.sub(initialBalance);
+        uint256 newBalance = address(this).balance.sub(initialBalance);
 
-            _addLiquidity(otherHalf, newBalance);
+        _addLiquidity(otherHalf, newBalance);
 
-            emit SwapAndLiquify(half, newBalance, otherHalf);
-        } else {
-            uint256 initialBalance = IERC20(usdtToken).balanceOf(address(this));
-
-            _swapTokensForBusd(half, address(this));
-
-            uint256 newBalance = IERC20(usdtToken).balanceOf(address(this)).sub(
-                initialBalance
-            );
-
-            _addLiquidityBusd(otherHalf, newBalance);
-
-            emit SwapAndLiquifyBusd(half, newBalance, otherHalf);
-        }
+        emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
     function _addLiquidity(uint256 tokenAmount, uint256 bnbAmount) private {
@@ -678,12 +663,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         emit SetRewardYield(_rewardYield,_rewardYieldDenominator);
     }
 
-    function setIsLiquidityInBnb(bool _value) external onlyOwner {
-        require(isLiquidityInBnb != _value, "Not changed");
-        isLiquidityInBnb = _value;
-        emit SetIsLiquidityInBnb(_value);
-    }
-
     function setNextRebase(uint256 _nextRebase) external onlyOwner {
         nextRebase = _nextRebase;
         emit SetNextRebase(_nextRebase);
@@ -728,6 +707,5 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     event SetAutoRebase(bool _autoRebase);
     event SetRebaseFrequency(uint256 _rebaseFrequency);
     event SetRewardYield(uint256 _rewardYield, uint256 _rewardYieldDenominator);
-    event SetIsLiquidityInBnb(bool _value);
     event SetNextRebase(uint256 _nextRebase);
 }
