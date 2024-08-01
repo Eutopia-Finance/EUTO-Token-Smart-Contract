@@ -51,7 +51,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     
     address public usdtToken = 0x55d398326f99059fF775485246999027B3197955; //mainnet
 
-    IDEXRouter public router;
+    IUniswapV2Router02 public router;
     address public pair;
 
     uint256 public liquidityFee = 5;
@@ -96,13 +96,13 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         __ERC20_init("Eutopia", "EUTO");
         __Ownable_init(initialOwner);
 
-        router = IDEXRouter(0x2Bf55D1596786F1AE8160e997D655DbE6d9Bca7A); //mainnet
+        router = IUniswapV2Router02(0x2Bf55D1596786F1AE8160e997D655DbE6d9Bca7A); //mainnet
         
-        pair = IDEXFactory(router.factory()).createPair(
+        pair = IUniswapV2Factory(router.factory()).createPair(
             address(this),
             router.WETH()
         );
-        address pairBusd = IDEXFactory(router.factory()).createPair(
+        address pairBusd = IUniswapV2Factory(router.factory()).createPair(
             address(this),
             usdtToken
         );
@@ -216,7 +216,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
 
     function manualSync() public {
         for (uint256 i = 0; i < _markerPairs.length; i++) {
-            InterfaceLP(_markerPairs[i]).sync();
+            IUniswapV2Pair(_markerPairs[i]).sync();
         }
     }
 
