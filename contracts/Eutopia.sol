@@ -200,7 +200,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             liquidityBalance += balanceOf(_markerPairs[i]).div(10**9);
         }
         return
-            accuracy.mul(liquidityBalance.mul(2)).div(
+            accuracy * (liquidityBalance * 2).div(
                 getCirculatingSupply().div(10**9)
             );
     }
@@ -234,7 +234,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         address to,
         uint256 amount
     ) internal returns (bool) {
-        uint256 gonAmount = amount.mul(_gonsPerFragment);
+        uint256 gonAmount = amount * _gonsPerFragment;
         _gonBalances[from] = _gonBalances[from] - gonAmount;
         _gonBalances[to] = _gonBalances[to] + gonAmount;
 
@@ -259,7 +259,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             return _basicTransfer(sender, recipient, amount);
         }
 
-        uint256 gonAmount = amount.mul(_gonsPerFragment);
+        uint256 gonAmount = amount * _gonsPerFragment;
 
         if (shouldSwapBack()) {
             swapBack();
@@ -391,10 +391,10 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         );
 
         uint256 amountToLiquify = contractTokenBalance
-            .mul(dynamicLiquidityFee.mul(2))
+            * (dynamicLiquidityFee * 2)
             .div(realTotalFee);
         uint256 amountToRFV = contractTokenBalance
-            .mul(buyFeeRFV.mul(2))
+            * (buyFeeRFV * 2)
             .div(realTotalFee);
         uint256 amountToTreasury = contractTokenBalance
             - amountToLiquify
@@ -428,7 +428,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 _realFee = totalBuyFee;
         if (automatedMarketMakerPairs[recipient]) _realFee = totalSellFee;
 
-        uint256 feeAmount = gonAmount.mul(_realFee).div(feeDenominator);
+        uint256 feeAmount = gonAmount * _realFee.div(feeDenominator);
 
         _gonBalances[address(this)] = _gonBalances[address(this)] + feeAmount;
         emit Transfer(sender, address(this), feeAmount.div(_gonsPerFragment));
@@ -483,7 +483,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         if (!inSwap) {
             //uint256 circulatingSupply = getCirculatingSupply();
             int256 supplyDelta = int256(
-                _totalSupply.mul(rewardYield).div(rewardYieldDenominator)
+                _totalSupply * rewardYield.div(rewardYieldDenominator)
             );
 
             coreRebase(supplyDelta);
@@ -522,7 +522,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
 
         //uint256 circulatingSupply = getCirculatingSupply();
         int256 supplyDelta = int256(
-            _totalSupply.mul(rewardYield).div(rewardYieldDenominator)
+            _totalSupply * rewardYield.div(rewardYieldDenominator)
         );
 
         coreRebase(supplyDelta);
@@ -584,7 +584,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 _denom
     ) external onlyOwner {
         swapEnabled = _enabled;
-        gonSwapThreshold = TOTAL_GONS.div(_denom).mul(_num);
+        gonSwapThreshold = TOTAL_GONS.div(_denom) * _num;
         emit SetSwapBackSettings(_enabled, _num, _denom);
     }
 
