@@ -12,10 +12,6 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
-    bool public initialDistributionFinished = false;
-    bool public swapEnabled = true;
-    bool public autoRebase = false;
-
     uint256 public rewardYield = 3958125;
     uint256 public rewardYieldDenominator = 10000000000;
 
@@ -178,7 +174,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         return
             !automatedMarketMakerPairs[msg.sender] &&
             !inSwap &&
-            swapEnabled &&
             totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= gonSwapThreshold;
     }
@@ -246,12 +241,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         address recipient,
         uint256 amount
     ) internal returns (bool) {
-        bool excludedAccount = _isFeeExempt[sender] || _isFeeExempt[recipient];
-
-        require(
-            initialDistributionFinished || excludedAccount,
-            "Trading not started"
-        );
 
         if (inSwap) {
             return _basicTransfer(sender, recipient, amount);
@@ -276,7 +265,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             gonAmountReceived / _gonsPerFragment
         );
 
-        if (shouldRebase() && autoRebase) {
+        if (shouldRebase()) {
             _rebase();
 
             if (
@@ -553,12 +542,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         emit SetAutomatedMarketMakerPair(_pair, _value);
     }
 
-    function setInitialDistributionFinished(bool _value) external onlyOwner {
-        require(initialDistributionFinished != _value, "Not changed");
-        initialDistributionFinished = _value;
-        emit SetInitialDistributionFinished(_value);
-    }
-
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
         require(_isFeeExempt[_addr] != _value, "Not changed");
         _isFeeExempt[_addr] = _value;
@@ -575,13 +558,11 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     }
 
     function setSwapBackSettings(
-        bool _enabled,
         uint256 _num,
         uint256 _denom
     ) external onlyOwner {
-        swapEnabled = _enabled;
         gonSwapThreshold = TOTAL_GONS / _denom * _num;
-        emit SetSwapBackSettings(_enabled, _num, _denom);
+        emit SetSwapBackSettings(_num, _denom);
     }
 
     function setFeeReceivers(
@@ -632,12 +613,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         emit ClearStuckBalance(_receiver);
     }
 
-    function setAutoRebase(bool _autoRebase) external onlyOwner {
-        require(autoRebase != _autoRebase, "Not changed");
-        autoRebase = _autoRebase;
-        emit SetAutoRebase(_autoRebase);
-    }
-
     function setRebaseFrequency(uint256 _rebaseFrequency) external onlyOwner {
         require(_rebaseFrequency <= MAX_REBASE_FREQUENCY, "Too high");
         rebaseFrequency = _rebaseFrequency;
@@ -677,10 +652,9 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     event LogRebase(uint256 indexed epoch, uint256 totalSupply);
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
     event ManualRebase(int256 supplyDelta);
-    event SetInitialDistributionFinished(bool _value);
     event SetFeeExempted(address _addr, bool _value);
     event SetTargetLiquidity(uint256 target, uint256 accuracy);
-    event SetSwapBackSettings(bool _enabled, uint256 _num, uint256 _denom);
+    event SetSwapBackSettings(uint256 _num, uint256 _denom);
     event SetFeeReceivers(
         address _liquidityReceiver,
         address _treasuryReceiver,
@@ -694,7 +668,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 _feeDenominator
     );
     event ClearStuckBalance(address _receiver);
-    event SetAutoRebase(bool _autoRebase);
     event SetRebaseFrequency(uint256 _rebaseFrequency);
     event SetRewardYield(uint256 _rewardYield, uint256 _rewardYieldDenominator);
     event SetNextRebase(uint256 _nextRebase);
