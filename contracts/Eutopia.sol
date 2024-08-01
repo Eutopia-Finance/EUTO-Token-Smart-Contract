@@ -133,12 +133,12 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
 
     receive() external payable {}
 
-    function totalSupply() external view override returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
     function allowance(address owner_, address spender)
-        external
+        public
         view
         override
         returns (uint256)
@@ -221,7 +221,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     }
 
     function transfer(address to, uint256 value)
-        external
+        public
         override
         validRecipient(to)
         returns (bool)
@@ -299,7 +299,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         address from,
         address to,
         uint256 value
-    ) external override validRecipient(to) returns (bool) {
+    ) public override validRecipient(to) returns (bool) {
         if (_allowedFragments[from][msg.sender] != type(uint256).max) {
             _allowedFragments[from][msg.sender] = _allowedFragments[from][
                 msg.sender
@@ -491,7 +491,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     }
 
     function approve(address spender, uint256 value)
-        external
+        public
         override
         returns (bool)
     {
