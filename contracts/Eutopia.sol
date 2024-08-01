@@ -12,11 +12,11 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
-    uint256 public rewardYield = 3958125;
-    uint256 public rewardYieldDenominator = 10000000000;
+    uint256 public rewardYield;
+    uint256 public rewardYieldDenominator;
 
-    uint256 public rebaseFrequency = 1800;
-    uint256 public nextRebase = block.timestamp + 31536000;
+    uint256 public rebaseFrequency;
+    uint256 public nextRebase;
 
     mapping(address => bool) _isFeeExempt;
 
@@ -35,33 +35,29 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
     address private constant ZERO = 0x0000000000000000000000000000000000000000;
 
-    address public liquidityReceiver =
-        0xF52c9341dC4ee92c321Fa11e01E3a6303f9bBe00;
-    address public treasuryReceiver =
-        0x6560eD767D6003D779F60BCCD2d7B168Cd4a1583;
-    address public riskFreeValueReceiver =
-        0xAf47725C293452Ade77770Bfb6BD2680564DA157;
+    address public liquidityReceiver;
+    address public treasuryReceiver;
+    address public riskFreeValueReceiver;
 
     IUniswapV2Router02 public router;
     address public pair;
 
-    uint256 public liquidityFee = 5;
-    uint256 public treasuryFee = 5;
-    uint256 public buyFeeRFV = 3;
-    uint256 public sellFeeTreasuryAdded = 5;
-    uint256 public totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
-    uint256 public totalSellFee =
-        totalBuyFee + sellFeeTreasuryAdded;
-    uint256 public feeDenominator = 100;
+    uint256 public liquidityFee;
+    uint256 public treasuryFee;
+    uint256 public buyFeeRFV;
+    uint256 public sellFeeTreasuryAdded;
+    uint256 public totalBuyFee;
+    uint256 public totalSellFee;
+    uint256 public feeDenominator;
 
-    uint256 targetLiquidity = 50;
-    uint256 targetLiquidityDenominator = 100;
+    uint256 targetLiquidity;
+    uint256 targetLiquidityDenominator;
 
     bool inSwap;
 
     uint256 private _totalSupply;
     uint256 private _gonsPerFragment;
-    uint256 private gonSwapThreshold = TOTAL_GONS  / 1000;
+    uint256 private gonSwapThreshold;
 
     mapping(address => uint256) private _gonBalances;
     mapping(address => mapping(address => uint256)) private _allowedFragments;
