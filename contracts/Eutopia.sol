@@ -59,6 +59,13 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
 
     bool inSwap;
 
+    uint256 private _totalSupply;
+    uint256 private _gonsPerFragment;
+    uint256 private gonSwapThreshold = TOTAL_GONS  / 1000;
+
+    mapping(address => uint256) private _gonBalances;
+    mapping(address => mapping(address => uint256)) private _allowedFragments;
+
     modifier swapping() {
         require (inSwap == false, "ReentrancyGuard: reentrant call");
         inSwap = true;
@@ -71,13 +78,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         _;
     }
 
-    uint256 private _totalSupply;
-    uint256 private _gonsPerFragment;
-    uint256 private gonSwapThreshold = TOTAL_GONS  / 1000;
-
-    mapping(address => uint256) private _gonBalances;
-    mapping(address => mapping(address => uint256)) private _allowedFragments;
-    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
