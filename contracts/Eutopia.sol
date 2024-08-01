@@ -19,8 +19,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     uint256 public nextRebase = block.timestamp + 31536000;
 
     mapping(address => bool) _isFeeExempt;
-    address[] public _markerPairs;
-    mapping(address => bool) public automatedMarketMakerPairs;
 
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
@@ -100,8 +98,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         _allowedFragments[address(this)][pair] = type(uint256).max;
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
 
-        setAutomatedMarketMakerPair(pair, true);
-
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _gonBalances[msg.sender] = TOTAL_GONS;
         _gonsPerFragment = TOTAL_GONS / _totalSupply;
@@ -153,14 +149,14 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         if (_isFeeExempt[from] || _isFeeExempt[to]) {
             return false;
         } else {
-            return (automatedMarketMakerPairs[from] ||
-                automatedMarketMakerPairs[to]);
+            return (pair == from ||
+                pair == to);
         }
     }
 
     function shouldSwapBack() internal view returns (bool) {
         return
-            !automatedMarketMakerPairs[msg.sender] &&
+            pair != msg.sender &&
             !inSwap &&
             totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= gonSwapThreshold;
@@ -176,10 +172,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         view
         returns (uint256)
     {
-        uint256 liquidityBalance = 0;
-        for (uint256 i = 0; i < _markerPairs.length; i++) {
-            liquidityBalance += balanceOf(_markerPairs[i]) / (10**9);
-        }
+        uint256 liquidityBalance = balanceOf(pair) / (10**9);
         return
             accuracy * (liquidityBalance * 2) / (
                 getCirculatingSupply() / (10**9)
@@ -195,9 +188,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
     }
 
     function manualSync() public {
-        for (uint256 i = 0; i < _markerPairs.length; i++) {
-            IUniswapV2Pair(_markerPairs[i]).sync();
-        }
+        IUniswapV2Pair(pair).sync();
     }
 
     function transfer(address to, uint256 value)
@@ -257,8 +248,8 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
             _rebase();
 
             if (
-                !automatedMarketMakerPairs[sender] &&
-                !automatedMarketMakerPairs[recipient]
+                pair != sender &&
+                pair != recipient
             ) {
                 manualSync();
             }
@@ -369,7 +360,7 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 gonAmount
     ) internal returns (uint256) {
         uint256 _realFee = totalBuyFee;
-        if (automatedMarketMakerPairs[recipient]) _realFee = totalSellFee;
+        if (pair == recipient) _realFee = totalSellFee;
 
         uint256 feeAmount = gonAmount * _realFee / feeDenominator;
 
@@ -471,33 +462,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         coreRebase(supplyDelta);
         manualSync();
         emit ManualRebase(supplyDelta);
-    }
-
-    function setAutomatedMarketMakerPair(address _pair, bool _value)
-        public
-        onlyOwner
-    {
-        require(
-            automatedMarketMakerPairs[_pair] != _value,
-            "Value already set"
-        );
-
-        automatedMarketMakerPairs[_pair] = _value;
-
-        if (_value) {
-            _markerPairs.push(_pair);
-        } else {
-            require(_markerPairs.length > 1, "Required 1 pair");
-            for (uint256 i = 0; i < _markerPairs.length; i++) {
-                if (_markerPairs[i] == _pair) {
-                    _markerPairs[i] = _markerPairs[_markerPairs.length - 1];
-                    _markerPairs.pop();
-                    break;
-                }
-            }
-        }
-
-        emit SetAutomatedMarketMakerPair(_pair, _value);
     }
 
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
@@ -603,7 +567,6 @@ contract Eutopia is Initializable, ERC20Upgradeable, OwnableUpgradeable, Reentra
         uint256 tokensIntoLiqudity
     );
     event LogRebase(uint256 indexed epoch, uint256 totalSupply);
-    event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
     event ManualRebase(int256 supplyDelta);
     event SetFeeExempted(address _addr, bool _value);
     event SetTargetLiquidity(uint256 target, uint256 accuracy);
