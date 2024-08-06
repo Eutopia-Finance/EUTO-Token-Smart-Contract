@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat test",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.ts --network sepolia",
+    "upgrade:sepolia": "npx hardhat run scripts/upgrade.ts --network sepolia",
     "test:sepolia": "npx hardhat test test/test_sepolia.ts --network sepolia",
     "test:hardhat": "npx hardhat test test/test_hardhat.ts --network hardhat"
   },
