@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades, run } from "hardhat";
 import { getImplementationAddress } from "@openzeppelin/upgrades-core";
 import dotenv from "dotenv";
 
@@ -12,10 +12,11 @@ const treasuryReceiver = process.env.SEPOLIA_TREASURY_RECEIVER;
 const essrReceiver = process.env.SEPOLIA_ESSR_RECEIVER;
 
 describe("Eutopia", function () {
-  it("Test contract", async function () {
-    const ContractFactory = await ethers.getContractFactory("Eutopia");
 
-    const instance = await upgrades.deployProxy(ContractFactory, [
+  it("Test", async function () {
+    const InstanceFactory = await ethers.getContractFactory("Eutopia");
+
+    const instance = await upgrades.deployProxy(InstanceFactory, [
       initialOwner,
       uniswapRouter,
       liquidityReceiver,
@@ -29,6 +30,16 @@ describe("Eutopia", function () {
 
     const implementationAddress = await getImplementationAddress(ethers.provider, instanceAddress);
     console.log("Implementation deployed to " + implementationAddress);
+
+    try {
+      await run("verify:verify", {
+        address: implementationAddress,
+        constructorArguments: [],
+      });
+      console.log("Implementation verified on Etherscan");
+    } catch (error) {
+      console.error("Error verifying :", error);
+    }
 
     expect(await instance.name()).to.equal("Eutopia");
   });

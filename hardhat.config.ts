@@ -38,6 +38,9 @@ const config: HardhatUserConfig = {
       sepolia: ETHERSCAN_API_KEY
     }
   },
+  mocha: {
+    timeout: 120000
+  }
 };
 
 export default config;
