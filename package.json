@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "test:sepolia": "npx hardhat test test/test_sepolia.ts --network sepolia",
+    "test:hardhat": "npx hardhat test test/test_hardhat.ts --network hardhat"
   },
   "author": "",
   "license": "MIT",

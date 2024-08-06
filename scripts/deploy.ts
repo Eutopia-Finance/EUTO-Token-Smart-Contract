@@ -24,7 +24,7 @@ async function main() {
   await instance.waitForDeployment();
 
   const instanceAddress = await instance.getAddress();
-  console.log("Proxy deployed to" + instanceAddress);
+  console.log("Proxy deployed to " + instanceAddress);
 
   const implementationAddress = await getImplementationAddress(ethers.provider, instanceAddress);
   console.log("Implementation deployed to " + implementationAddress);
