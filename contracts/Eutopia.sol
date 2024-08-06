@@ -21,7 +21,7 @@ contract Eutopia is
     uint256 public rewardYieldDenominator;
     uint256 public rebaseFrequency;
     uint256 public nextRebase;
-
+    
     mapping(address => bool) private isFeeExempt;
 
     uint256 public constant MAX_FEE_RATE = 18;
@@ -85,20 +85,19 @@ contract Eutopia is
         address _router,
         address _liquidityReceiver,
         address _treasuryReceiver,
-        address _riskFreeValueReceiver
+        address _essrReceiver
     ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
         __Ownable_init(_initialOwner);
 
         rewardYield = 3958125;
-        rewardYieldDenominator = 10000000000;
-
+        rewardYieldDenominator = 1e10;
         rebaseFrequency = 1800;
         nextRebase = block.timestamp + 31536000;
 
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _riskFreeValueReceiver;
+        riskFreeValueReceiver = _essrReceiver;
 
         liquidityFee = 5;
         treasuryFee = 5;
@@ -489,15 +488,15 @@ contract Eutopia is
     function setFeeReceivers(
         address _liquidityReceiver,
         address _treasuryReceiver,
-        address _riskFreeValueReceiver
+        address _essrReceiver
     ) external onlyOwner {
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _riskFreeValueReceiver;
+        riskFreeValueReceiver = _essrReceiver;
         emit SetFeeReceivers(
             _liquidityReceiver,
             _treasuryReceiver,
-            _riskFreeValueReceiver
+            _essrReceiver
         );
     }
 
@@ -583,7 +582,7 @@ contract Eutopia is
     event SetFeeReceivers(
         address _liquidityReceiver,
         address _treasuryReceiver,
-        address _riskFreeValueReceiver
+        address _essrReceiver
     );
     event SetFees(
         uint256 _liquidityFee,
