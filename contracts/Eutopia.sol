@@ -46,7 +46,7 @@ contract Eutopia is
 
     uint256 public liquidityFee;
     uint256 public treasuryFee;
-    uint256 public buyFeeRFV;
+    uint256 public buyFeeEssr;
     uint256 public sellFeeTreasuryAdded;
     uint256 public totalBuyFee;
     uint256 public totalSellFee;
@@ -101,9 +101,9 @@ contract Eutopia is
 
         liquidityFee = 5;
         treasuryFee = 5;
-        buyFeeRFV = 3;
+        buyFeeEssr = 3;
         sellFeeTreasuryAdded = 5;
-        totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
+        totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
         totalSellFee = totalBuyFee + sellFeeTreasuryAdded;
         feeDenominator = 100;
 
@@ -335,18 +335,18 @@ contract Eutopia is
         uint256 amountToLiquify = (contractTokenBalance *
             dynamicLiquidityFee *
             2) / realTotalFee;
-        uint256 amountToRFV = (contractTokenBalance * buyFeeRFV * 2) /
+        uint256 amountToEssr = (contractTokenBalance * buyFeeEssr * 2) /
             realTotalFee;
         uint256 amountToTreasury = contractTokenBalance -
             amountToLiquify -
-            amountToRFV;
+            amountToEssr;
 
         if (amountToLiquify > 0) {
             _swapAndLiquify(amountToLiquify);
         }
 
-        if (amountToRFV > 0) {
-            _swapTokensForBNB(amountToRFV, riskFreeValueReceiver);
+        if (amountToEssr > 0) {
+            _swapTokensForBNB(amountToEssr, riskFreeValueReceiver);
         }
 
         if (amountToTreasury > 0) {
@@ -356,7 +356,7 @@ contract Eutopia is
         emit SwapBack(
             contractTokenBalance,
             amountToLiquify,
-            amountToRFV,
+            amountToEssr,
             amountToTreasury
         );
     }
@@ -516,10 +516,10 @@ contract Eutopia is
         );
 
         liquidityFee = _liquidityFee;
-        buyFeeRFV = _riskFreeValue;
+        buyFeeEssr = _riskFreeValue;
         treasuryFee = _treasuryFee;
         sellFeeTreasuryAdded = _sellFeeTreasuryAdded;
-        totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
+        totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
         totalSellFee = totalBuyFee + sellFeeTreasuryAdded;
 
         require(totalBuyFee <= MAX_FEE_BUY, "Total BUY fee is too high");
@@ -566,7 +566,7 @@ contract Eutopia is
     event SwapBack(
         uint256 contractTokenBalance,
         uint256 amountToLiquify,
-        uint256 amountToRFV,
+        uint256 amountToEssr,
         uint256 amountToTreasury
     );
     event SwapAndLiquify(
