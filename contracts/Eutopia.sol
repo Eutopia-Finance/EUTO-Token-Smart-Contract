@@ -41,7 +41,7 @@ contract Eutopia is
     uint256 public liquidityFee;
     uint256 public treasuryFee;
     uint256 public buyFeeEssr;
-    uint256 public sellFeeTreasuryAdded;
+    uint256 public sellFeeTreasury;
     uint256 public totalBuyFee;
     uint256 public totalSellFee;
     uint256 public feeDenominator;
@@ -94,9 +94,9 @@ contract Eutopia is
         liquidityFee = 5;
         treasuryFee = 5;
         buyFeeEssr = 3;
-        sellFeeTreasuryAdded = 5;
+        sellFeeTreasury = 5;
         totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
-        totalSellFee = totalBuyFee + sellFeeTreasuryAdded;
+        totalSellFee = totalBuyFee + sellFeeTreasury;
         feeDenominator = 100;
 
         targetLiquidity = 50;
@@ -496,23 +496,23 @@ contract Eutopia is
         uint256 _liquidityFee,
         uint256 _riskFreeValue,
         uint256 _treasuryFee,
-        uint256 _sellFeeTreasuryAdded,
+        uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     ) external onlyOwner {
         require(
             _liquidityFee <= MAX_FEE_RATE &&
                 _riskFreeValue <= MAX_FEE_RATE &&
                 _treasuryFee <= MAX_FEE_RATE &&
-                _sellFeeTreasuryAdded <= MAX_FEE_RATE,
+                _sellFeeTreasury <= MAX_FEE_RATE,
             "wrong"
         );
 
         liquidityFee = _liquidityFee;
         buyFeeEssr = _riskFreeValue;
         treasuryFee = _treasuryFee;
-        sellFeeTreasuryAdded = _sellFeeTreasuryAdded;
+        sellFeeTreasury = _sellFeeTreasury;
         totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
-        totalSellFee = totalBuyFee + sellFeeTreasuryAdded;
+        totalSellFee = totalBuyFee + sellFeeTreasury;
 
         require(totalBuyFee <= MAX_FEE_BUY, "Total BUY fee is too high");
         require(totalSellFee <= MAX_FEE_SELL, "Total SELL fee is too high");
@@ -524,7 +524,7 @@ contract Eutopia is
             _liquidityFee,
             _riskFreeValue,
             _treasuryFee,
-            _sellFeeTreasuryAdded,
+            _sellFeeTreasury,
             _feeDenominator
         );
     }
@@ -580,7 +580,7 @@ contract Eutopia is
         uint256 _liquidityFee,
         uint256 _riskFreeValue,
         uint256 _treasuryFee,
-        uint256 _sellFeeTreasuryAdded,
+        uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     );
     event ClearStuckBalance(address _receiver);
