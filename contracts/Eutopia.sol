@@ -17,16 +17,16 @@ contract Eutopia is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
-    address private constant ZERO = 0x0000000000000000000000000000000000000000;
-    address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
-    uint256 private constant TOTAL_GONS =
+    address public constant ZERO = 0x0000000000000000000000000000000000000000;
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    uint256 public constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
+    uint256 public constant TOTAL_GONS =
         type(uint256).max - (type(uint256).max % INITIAL_FRAGMENTS_SUPPLY);
-    uint256 private constant MAX_SUPPLY = type(uint128).max;
+    uint256 public constant MAX_SUPPLY = type(uint128).max;
+    uint256 public constant MAX_REBASE_FREQUENCY = 1800;
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
     uint256 public constant MAX_FEE_SELL = 18;
-    uint256 private constant MAX_REBASE_FREQUENCY = 1800;
 
     uint256 public rewardYield;
     uint256 public rewardYieldDenominator;
@@ -45,16 +45,16 @@ contract Eutopia is
     uint256 public totalBuyFee;
     uint256 public totalSellFee;
     uint256 public feeDenominator;
-
+    
+    mapping(address => mapping(address => uint256)) public _allowedFragments;
+    mapping(address => uint256) public _gonBalances;
+    mapping(address => bool) public isFeeExempt;
+    uint256 public _totalSupply;
+    uint256 public _gonsPerFragment;
+    uint256 public gonSwapThreshold;
     IUniswapV2Router02 public router;
     address public pair;
-    bool private inSwap;
-    uint256 private _totalSupply;
-    uint256 private _gonsPerFragment;
-    uint256 private gonSwapThreshold;
-    mapping(address => uint256) private _gonBalances;
-    mapping(address => mapping(address => uint256)) private _allowedFragments;
-    mapping(address => bool) private isFeeExempt;
+    bool public inSwap;
 
     modifier swapping() {
         inSwap = true;
