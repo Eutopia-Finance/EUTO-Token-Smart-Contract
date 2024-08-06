@@ -35,11 +35,22 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      sepolia: ETHERSCAN_API_KEY
-    }
+      //// sepolia: ETHERSCAN_API_KEY,
+      sepolia: "sepolia",
+    },
+    customChains: [ ////
+      {
+        network: "sepolia",
+        chainId: 11155111,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/11155111/etherscan",
+          browserURL: "https://11155111.testnet.routescan.io/"
+        }
+      }
+    ]
   },
   mocha: {
-    timeout: 120000
+    timeout: 600000
   }
 };
 

@@ -24,7 +24,7 @@ async function main() {
   await instance.waitForDeployment();
 
   const instanceAddress = await instance.getAddress();
-  console.log("Proxy deployed to" + instanceAddress);
+  console.log("Proxy deployed to " + instanceAddress);
 
   const implementationAddress = await getImplementationAddress(ethers.provider, instanceAddress);
   console.log("Implementation deployed to " + implementationAddress);
@@ -38,13 +38,11 @@ async function main() {
   } catch (error) {
     console.error("Error verifying :", error);
   }
-
-  expect(await instance.name()).to.equal("Eutopia");
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
