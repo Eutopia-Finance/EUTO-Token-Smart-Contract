@@ -10,6 +10,8 @@ async function main() {
 
     await upgraded.waitForDeployment();
 
+    await new Promise(resolve => setTimeout(resolve, 10000)); ////
+
     const instanceAddress = await upgraded.getAddress();
     const implementationAddress = await upgrades.erc1967.getImplementationAddress(instanceAddress);
 
