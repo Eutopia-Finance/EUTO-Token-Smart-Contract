@@ -19,12 +19,10 @@ contract Eutopia is
 {
     address private constant ZERO = 0x0000000000000000000000000000000000000000;
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
-
     uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
     uint256 private constant TOTAL_GONS =
         type(uint256).max - (type(uint256).max % INITIAL_FRAGMENTS_SUPPLY);
     uint256 private constant MAX_SUPPLY = type(uint128).max;
-
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
     uint256 public constant MAX_FEE_SELL = 18;
@@ -34,15 +32,11 @@ contract Eutopia is
     uint256 public rewardYieldDenominator;
     uint256 public rebaseFrequency;
     uint256 public nextRebase;
-
-    mapping(address => bool) private isFeeExempt;
-
+    uint256 public targetLiquidity;
+    uint256 public targetLiquidityDenominator;
     address public liquidityReceiver;
     address public treasuryReceiver;
     address public riskFreeValueReceiver;
-
-    IUniswapV2Router02 public router;
-    address public pair;
 
     uint256 public liquidityFee;
     uint256 public treasuryFee;
@@ -52,17 +46,15 @@ contract Eutopia is
     uint256 public totalSellFee;
     uint256 public feeDenominator;
 
-    uint256 public targetLiquidity;
-    uint256 public targetLiquidityDenominator;
-
+    IUniswapV2Router02 public router;
+    address public pair;
     bool private inSwap;
-
     uint256 private _totalSupply;
     uint256 private _gonsPerFragment;
     uint256 private gonSwapThreshold;
-
     mapping(address => uint256) private _gonBalances;
     mapping(address => mapping(address => uint256)) private _allowedFragments;
+    mapping(address => bool) private isFeeExempt;
 
     modifier swapping() {
         inSwap = true;
