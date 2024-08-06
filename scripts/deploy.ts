@@ -1,13 +1,45 @@
-import { ethers, upgrades } from "hardhat";
+import { expect } from "chai";
+import { ethers, upgrades, run } from "hardhat";
+import { getImplementationAddress } from "@openzeppelin/upgrades-core";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const initialOwner = process.env.SEPOLIA_INITIAL_OWNER;
+const uniswapRouter = process.env.SEPOLIA_UNISWAP_ROUTER;
+const liquidityReceiver = process.env.SEPOLIA_LIQUIDITY_RECEIVER;
+const treasuryReceiver = process.env.SEPOLIA_TREASURY_RECEIVER;
+const essrReceiver = process.env.SEPOLIA_ESSR_RECEIVER;
 
 async function main() {
-  const ContractFactory = await ethers.getContractFactory("Eutopia");
+  const InstanceFactory = await ethers.getContractFactory("Eutopia");
 
-  // TODO: Set addresses for the contract arguments below
-  const instance = await upgrades.deployProxy(ContractFactory, [initialOwner]);
+  const instance = await upgrades.deployProxy(InstanceFactory, [
+    initialOwner,
+    uniswapRouter,
+    liquidityReceiver,
+    treasuryReceiver,
+    essrReceiver
+  ]);
   await instance.waitForDeployment();
 
-  console.log(`Proxy deployed to ${await instance.getAddress()}`);
+  const instanceAddress = await instance.getAddress();
+  console.log("Proxy deployed to" + instanceAddress);
+
+  const implementationAddress = await getImplementationAddress(ethers.provider, instanceAddress);
+  console.log("Implementation deployed to " + implementationAddress);
+
+  try {
+    await run("verify:verify", {
+      address: implementationAddress,
+      constructorArguments: [],
+    });
+    console.log("Implementation verified on Etherscan");
+  } catch (error) {
+    console.error("Error verifying :", error);
+  }
+
+  expect(await instance.name()).to.equal("Eutopia");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
