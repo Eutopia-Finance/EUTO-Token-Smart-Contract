@@ -179,7 +179,7 @@ contract Eutopia is
 
     function shouldSwapBack() internal view returns (bool) {
         return
-            pair != msg.sender &&//?
+            pair != msg.sender &&
             !inSwap &&
             totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= gonSwapThreshold;
