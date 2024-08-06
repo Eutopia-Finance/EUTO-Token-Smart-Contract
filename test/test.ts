@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
+import { getImplementationAddress } from "@openzeppelin/upgrades-core";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -22,6 +23,12 @@ describe("Eutopia", function () {
       essrReceiver
     ]);
     await instance.waitForDeployment();
+
+    const instanceAddress = await instance.getAddress();
+    console.log("Proxy deployed to" + instanceAddress);
+
+    const implementationAddress = await getImplementationAddress(ethers.provider, instanceAddress);
+    console.log("Implementation deployed to " + implementationAddress);
 
     expect(await instance.name()).to.equal("Eutopia");
   });
