@@ -21,7 +21,7 @@ contract Eutopia is
     uint256 public rebaseFrequency;
     uint256 public nextRebase;
 
-    mapping(address => bool) private _isFeeExempt;
+    mapping(address => bool) private isFeeExempt;
 
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
@@ -129,10 +129,10 @@ contract Eutopia is
         _gonBalances[msg.sender] = TOTAL_GONS;
         _gonsPerFragment = TOTAL_GONS / _totalSupply;
 
-        _isFeeExempt[treasuryReceiver] = true;
-        _isFeeExempt[riskFreeValueReceiver] = true;
-        _isFeeExempt[address(this)] = true;
-        _isFeeExempt[msg.sender] = true;
+        isFeeExempt[treasuryReceiver] = true;
+        isFeeExempt[riskFreeValueReceiver] = true;
+        isFeeExempt[address(this)] = true;
+        isFeeExempt[msg.sender] = true;
 
         emit Transfer(ZERO, msg.sender, _totalSupply);
     }
@@ -155,7 +155,7 @@ contract Eutopia is
     }
 
     function checkFeeExempt(address _addr) external view returns (bool) {
-        return _isFeeExempt[_addr];
+        return isFeeExempt[_addr];
     }
 
     function checkSwapThreshold() external view returns (uint256) {
@@ -170,7 +170,7 @@ contract Eutopia is
         address from,
         address to
     ) internal view returns (bool) {
-        if (_isFeeExempt[from] || _isFeeExempt[to]) {
+        if (isFeeExempt[from] || isFeeExempt[to]) {
             return false;
         } else {
             return (pair == from || pair == to);
@@ -465,8 +465,8 @@ contract Eutopia is
     }
 
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
-        require(_isFeeExempt[_addr] != _value, "Not changed");
-        _isFeeExempt[_addr] = _value;
+        require(isFeeExempt[_addr] != _value, "Not changed");
+        isFeeExempt[_addr] = _value;
         emit SetFeeExempted(_addr, _value);
     }
 
