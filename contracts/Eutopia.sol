@@ -86,7 +86,8 @@ contract Eutopia is
         rewardYieldDenominator = 1e10;
         rebaseFrequency = 1800;
         nextRebase = block.timestamp + 31536000;
-
+        targetLiquidity = 50;
+        targetLiquidityDenominator = 100;
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
         riskFreeValueReceiver = _essrReceiver;
@@ -99,30 +100,23 @@ contract Eutopia is
         totalSellFee = totalBuyFee + sellFeeTreasury;
         feeDenominator = 100;
 
-        targetLiquidity = 50;
-        targetLiquidityDenominator = 100;
-
-        gonSwapThreshold = TOTAL_GONS / 1000;
-
-        router = IUniswapV2Router02(_router);
-
-        pair = IUniswapV2Factory(router.factory()).createPair(
-            address(this),
-            router.WETH()
-        );
-
         _allowedFragments[address(this)][address(router)] = type(uint256).max;
         _allowedFragments[address(this)][pair] = type(uint256).max;
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
-
-        _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _gonBalances[msg.sender] = TOTAL_GONS;
-        _gonsPerFragment = TOTAL_GONS / _totalSupply;
-
         isFeeExempt[treasuryReceiver] = true;
         isFeeExempt[riskFreeValueReceiver] = true;
         isFeeExempt[address(this)] = true;
         isFeeExempt[msg.sender] = true;
+        _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
+        _gonsPerFragment = TOTAL_GONS / _totalSupply;
+        gonSwapThreshold = TOTAL_GONS / 1000;
+        router = IUniswapV2Router02(_router);
+        pair = IUniswapV2Factory(router.factory()).createPair(
+            address(this),
+            router.WETH()
+        );
+        inSwap = false;
 
         emit Transfer(ZERO, msg.sender, _totalSupply);
     }
