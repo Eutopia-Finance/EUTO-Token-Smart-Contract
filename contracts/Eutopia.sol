@@ -27,10 +27,8 @@ contract Eutopia is
     uint256 public constant MAX_FEE_BUY = 13;
     uint256 public constant MAX_FEE_SELL = 18;
     uint256 private constant MAX_REBASE_FREQUENCY = 1800;
-    uint256 private constant DECIMALS = 18;
     uint256 private constant MAX_UINT256 = ~uint256(0);
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY =
-        23 * 10 ** 8 * 10 ** DECIMALS;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
     uint256 private constant TOTAL_GONS =
         MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
     uint256 private constant MAX_SUPPLY = ~uint128(0);
