@@ -17,53 +17,44 @@ contract Eutopia is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    address public constant ZERO = 0x0000000000000000000000000000000000000000;
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    uint256 public constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
+    uint256 public constant TOTAL_GONS =
+        type(uint256).max - (type(uint256).max % INITIAL_FRAGMENTS_SUPPLY);
+    uint256 public constant MAX_SUPPLY = type(uint128).max;
+    uint256 public constant MAX_REBASE_FREQUENCY = 1800;
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
     uint256 public constant MAX_FEE_SELL = 18;
-    uint256 private constant MAX_REBASE_FREQUENCY = 1800;
 
     uint256 public rewardYield;
     uint256 public rewardYieldDenominator;
     uint256 public rebaseFrequency;
     uint256 public nextRebase;
-
-    mapping(address => bool) private isFeeExempt;
-    
-    uint256 private constant MAX_UINT256 = ~uint256(0);
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
-    uint256 private constant TOTAL_GONS =
-        MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
-    uint256 private constant MAX_SUPPLY = ~uint128(0);
-
-    address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    address private constant ZERO = 0x0000000000000000000000000000000000000000;
-
+    uint256 public targetLiquidity;
+    uint256 public targetLiquidityDenominator;
     address public liquidityReceiver;
     address public treasuryReceiver;
     address public riskFreeValueReceiver;
 
-    IUniswapV2Router02 public router;
-    address public pair;
-
     uint256 public liquidityFee;
     uint256 public treasuryFee;
-    uint256 public buyFeeRFV;
-    uint256 public sellFeeTreasuryAdded;
+    uint256 public buyFeeEssr;
+    uint256 public sellFeeTreasury;
     uint256 public totalBuyFee;
     uint256 public totalSellFee;
     uint256 public feeDenominator;
-
-    uint256 public targetLiquidity;
-    uint256 public targetLiquidityDenominator;
-
-    bool private inSwap;
-
-    uint256 private _totalSupply;
-    uint256 private _gonsPerFragment;
-    uint256 private gonSwapThreshold;
-
-    mapping(address => uint256) private _gonBalances;
-    mapping(address => mapping(address => uint256)) private _allowedFragments;
+    
+    mapping(address => mapping(address => uint256)) public _allowedFragments;
+    mapping(address => uint256) public _gonBalances;
+    mapping(address => bool) public isFeeExempt;
+    uint256 public _totalSupply;
+    uint256 public _gonsPerFragment;
+    uint256 public gonSwapThreshold;
+    IUniswapV2Router02 public router;
+    address public pair;
+    bool public inSwap;
 
     modifier swapping() {
         inSwap = true;
@@ -102,10 +93,10 @@ contract Eutopia is
 
         liquidityFee = 5;
         treasuryFee = 5;
-        buyFeeRFV = 3;
-        sellFeeTreasuryAdded = 5;
-        totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
-        totalSellFee = totalBuyFee + sellFeeTreasuryAdded;
+        buyFeeEssr = 3;
+        sellFeeTreasury = 5;
+        totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
+        totalSellFee = totalBuyFee + sellFeeTreasury;
         feeDenominator = 100;
 
         targetLiquidity = 50;
@@ -134,12 +125,6 @@ contract Eutopia is
         isFeeExempt[msg.sender] = true;
 
         emit Transfer(ZERO, msg.sender, _totalSupply);
-
-        console.log(type(uint256).max);
-        console.log(~uint256(0));
-        
-        console.log(type(uint128).max);
-        console.log(~uint128(0));
     }
 
     receive() external payable {}
@@ -342,18 +327,18 @@ contract Eutopia is
         uint256 amountToLiquify = (contractTokenBalance *
             dynamicLiquidityFee *
             2) / realTotalFee;
-        uint256 amountToRFV = (contractTokenBalance * buyFeeRFV * 2) /
+        uint256 amountToEssr = (contractTokenBalance * buyFeeEssr * 2) /
             realTotalFee;
         uint256 amountToTreasury = contractTokenBalance -
             amountToLiquify -
-            amountToRFV;
+            amountToEssr;
 
         if (amountToLiquify > 0) {
             _swapAndLiquify(amountToLiquify);
         }
 
-        if (amountToRFV > 0) {
-            _swapTokensForBNB(amountToRFV, riskFreeValueReceiver);
+        if (amountToEssr > 0) {
+            _swapTokensForBNB(amountToEssr, riskFreeValueReceiver);
         }
 
         if (amountToTreasury > 0) {
@@ -363,7 +348,7 @@ contract Eutopia is
         emit SwapBack(
             contractTokenBalance,
             amountToLiquify,
-            amountToRFV,
+            amountToEssr,
             amountToTreasury
         );
     }
@@ -511,23 +496,23 @@ contract Eutopia is
         uint256 _liquidityFee,
         uint256 _riskFreeValue,
         uint256 _treasuryFee,
-        uint256 _sellFeeTreasuryAdded,
+        uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     ) external onlyOwner {
         require(
             _liquidityFee <= MAX_FEE_RATE &&
                 _riskFreeValue <= MAX_FEE_RATE &&
                 _treasuryFee <= MAX_FEE_RATE &&
-                _sellFeeTreasuryAdded <= MAX_FEE_RATE,
+                _sellFeeTreasury <= MAX_FEE_RATE,
             "wrong"
         );
 
         liquidityFee = _liquidityFee;
-        buyFeeRFV = _riskFreeValue;
+        buyFeeEssr = _riskFreeValue;
         treasuryFee = _treasuryFee;
-        sellFeeTreasuryAdded = _sellFeeTreasuryAdded;
-        totalBuyFee = liquidityFee + treasuryFee + buyFeeRFV;
-        totalSellFee = totalBuyFee + sellFeeTreasuryAdded;
+        sellFeeTreasury = _sellFeeTreasury;
+        totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
+        totalSellFee = totalBuyFee + sellFeeTreasury;
 
         require(totalBuyFee <= MAX_FEE_BUY, "Total BUY fee is too high");
         require(totalSellFee <= MAX_FEE_SELL, "Total SELL fee is too high");
@@ -539,7 +524,7 @@ contract Eutopia is
             _liquidityFee,
             _riskFreeValue,
             _treasuryFee,
-            _sellFeeTreasuryAdded,
+            _sellFeeTreasury,
             _feeDenominator
         );
     }
@@ -573,7 +558,7 @@ contract Eutopia is
     event SwapBack(
         uint256 contractTokenBalance,
         uint256 amountToLiquify,
-        uint256 amountToRFV,
+        uint256 amountToEssr,
         uint256 amountToTreasury
     );
     event SwapAndLiquify(
@@ -595,7 +580,7 @@ contract Eutopia is
         uint256 _liquidityFee,
         uint256 _riskFreeValue,
         uint256 _treasuryFee,
-        uint256 _sellFeeTreasuryAdded,
+        uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     );
     event ClearStuckBalance(address _receiver);
