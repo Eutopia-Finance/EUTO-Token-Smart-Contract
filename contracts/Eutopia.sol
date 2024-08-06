@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "hardhat/console.sol";
 
 contract Eutopia is
     Initializable,
@@ -80,14 +81,14 @@ contract Eutopia is
     }
 
     function initialize(
-        address initialOwner,
+        address _initialOwner,
         address _router,
         address _liquidityReceiver,
         address _treasuryReceiver,
         address _riskFreeValueReceiver
     ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
-        __Ownable_init(initialOwner);
+        __Ownable_init(_initialOwner);
 
         rewardYield = 3958125;
         rewardYieldDenominator = 10000000000;
