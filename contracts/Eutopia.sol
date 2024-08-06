@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Compatible with OpenZeppelin Contracts ^5.0.0
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -17,17 +17,18 @@ contract Eutopia is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    uint256 public constant MAX_FEE_RATE = 18;
+    uint256 public constant MAX_FEE_BUY = 13;
+    uint256 public constant MAX_FEE_SELL = 18;
+    uint256 private constant MAX_REBASE_FREQUENCY = 1800;
+
     uint256 public rewardYield;
     uint256 public rewardYieldDenominator;
     uint256 public rebaseFrequency;
     uint256 public nextRebase;
 
     mapping(address => bool) private isFeeExempt;
-
-    uint256 public constant MAX_FEE_RATE = 18;
-    uint256 public constant MAX_FEE_BUY = 13;
-    uint256 public constant MAX_FEE_SELL = 18;
-    uint256 private constant MAX_REBASE_FREQUENCY = 1800;
+    
     uint256 private constant MAX_UINT256 = ~uint256(0);
     uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
     uint256 private constant TOTAL_GONS =
@@ -85,20 +86,19 @@ contract Eutopia is
         address _router,
         address _liquidityReceiver,
         address _treasuryReceiver,
-        address _riskFreeValueReceiver
+        address _essrReceiver
     ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
         __Ownable_init(_initialOwner);
 
         rewardYield = 3958125;
-        rewardYieldDenominator = 10000000000;
-
+        rewardYieldDenominator = 1e10;
         rebaseFrequency = 1800;
         nextRebase = block.timestamp + 31536000;
 
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _riskFreeValueReceiver;
+        riskFreeValueReceiver = _essrReceiver;
 
         liquidityFee = 5;
         treasuryFee = 5;
@@ -134,6 +134,12 @@ contract Eutopia is
         isFeeExempt[msg.sender] = true;
 
         emit Transfer(ZERO, msg.sender, _totalSupply);
+
+        console.log(type(uint256).max);
+        console.log(~uint256(0));
+        
+        console.log(type(uint128).max);
+        console.log(~uint128(0));
     }
 
     receive() external payable {}
@@ -489,15 +495,15 @@ contract Eutopia is
     function setFeeReceivers(
         address _liquidityReceiver,
         address _treasuryReceiver,
-        address _riskFreeValueReceiver
+        address _essrReceiver
     ) external onlyOwner {
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _riskFreeValueReceiver;
+        riskFreeValueReceiver = _essrReceiver;
         emit SetFeeReceivers(
             _liquidityReceiver,
             _treasuryReceiver,
-            _riskFreeValueReceiver
+            _essrReceiver
         );
     }
 
@@ -583,7 +589,7 @@ contract Eutopia is
     event SetFeeReceivers(
         address _liquidityReceiver,
         address _treasuryReceiver,
-        address _riskFreeValueReceiver
+        address _essrReceiver
     );
     event SetFees(
         uint256 _liquidityFee,
