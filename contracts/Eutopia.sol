@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "hardhat/console.sol";
 
 contract Eutopia is
     Initializable,
@@ -21,16 +22,14 @@ contract Eutopia is
     uint256 public rebaseFrequency;
     uint256 public nextRebase;
 
-    mapping(address => bool) private _isFeeExempt;
+    mapping(address => bool) private isFeeExempt;
 
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
     uint256 public constant MAX_FEE_SELL = 18;
     uint256 private constant MAX_REBASE_FREQUENCY = 1800;
-    uint256 private constant DECIMALS = 18;
     uint256 private constant MAX_UINT256 = ~uint256(0);
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY =
-        23 * 10 ** 8 * 10 ** DECIMALS;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
     uint256 private constant TOTAL_GONS =
         MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
     uint256 private constant MAX_SUPPLY = ~uint128(0);
@@ -82,14 +81,14 @@ contract Eutopia is
     }
 
     function initialize(
-        address initialOwner,
+        address _initialOwner,
         address _router,
         address _liquidityReceiver,
         address _treasuryReceiver,
         address _riskFreeValueReceiver
     ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
-        __Ownable_init(initialOwner);
+        __Ownable_init(_initialOwner);
 
         rewardYield = 3958125;
         rewardYieldDenominator = 10000000000;
@@ -129,10 +128,10 @@ contract Eutopia is
         _gonBalances[msg.sender] = TOTAL_GONS;
         _gonsPerFragment = TOTAL_GONS / _totalSupply;
 
-        _isFeeExempt[treasuryReceiver] = true;
-        _isFeeExempt[riskFreeValueReceiver] = true;
-        _isFeeExempt[address(this)] = true;
-        _isFeeExempt[msg.sender] = true;
+        isFeeExempt[treasuryReceiver] = true;
+        isFeeExempt[riskFreeValueReceiver] = true;
+        isFeeExempt[address(this)] = true;
+        isFeeExempt[msg.sender] = true;
 
         emit Transfer(ZERO, msg.sender, _totalSupply);
     }
@@ -155,7 +154,7 @@ contract Eutopia is
     }
 
     function checkFeeExempt(address _addr) external view returns (bool) {
-        return _isFeeExempt[_addr];
+        return isFeeExempt[_addr];
     }
 
     function checkSwapThreshold() external view returns (uint256) {
@@ -170,7 +169,7 @@ contract Eutopia is
         address from,
         address to
     ) internal view returns (bool) {
-        if (_isFeeExempt[from] || _isFeeExempt[to]) {
+        if (isFeeExempt[from] || isFeeExempt[to]) {
             return false;
         } else {
             return (pair == from || pair == to);
@@ -179,7 +178,7 @@ contract Eutopia is
 
     function shouldSwapBack() internal view returns (bool) {
         return
-            pair != msg.sender &&//?
+            pair != msg.sender &&
             !inSwap &&
             totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= gonSwapThreshold;
@@ -465,8 +464,8 @@ contract Eutopia is
     }
 
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
-        require(_isFeeExempt[_addr] != _value, "Not changed");
-        _isFeeExempt[_addr] = _value;
+        require(isFeeExempt[_addr] != _value, "Not changed");
+        isFeeExempt[_addr] = _value;
         emit SetFeeExempted(_addr, _value);
     }
 
