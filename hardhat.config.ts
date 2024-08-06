@@ -24,7 +24,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 1337,
       forking: {
-        url: `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
+        url: INFURA_PROJECT_ID,
       },
     },
     sepolia: {
