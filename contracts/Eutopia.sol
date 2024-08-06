@@ -17,6 +17,14 @@ contract Eutopia is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    address private constant ZERO = 0x0000000000000000000000000000000000000000;
+    address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
+
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
+    uint256 private constant TOTAL_GONS =
+        type(uint256).max - (type(uint256).max % INITIAL_FRAGMENTS_SUPPLY);
+    uint256 private constant MAX_SUPPLY = type(uint128).max;
+
     uint256 public constant MAX_FEE_RATE = 18;
     uint256 public constant MAX_FEE_BUY = 13;
     uint256 public constant MAX_FEE_SELL = 18;
@@ -28,15 +36,6 @@ contract Eutopia is
     uint256 public nextRebase;
 
     mapping(address => bool) private isFeeExempt;
-
-    uint256 private constant MAX_UINT256 = type(uint256).max;
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
-    uint256 private constant TOTAL_GONS =
-        MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
-    uint256 private constant MAX_SUPPLY = type(uint128).max;
-
-    address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    address private constant ZERO = 0x0000000000000000000000000000000000000000;
 
     address public liquidityReceiver;
     address public treasuryReceiver;
