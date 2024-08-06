@@ -48,18 +48,18 @@ contract Eutopia is
     
     mapping(address => mapping(address => uint256)) private _allowedFragments;
     mapping(address => uint256) private _gonBalances;
-    mapping(address => bool) private isFeeExempt;
+    mapping(address => bool) private _isFeeExempt;
     uint256 private _totalSupply;
     uint256 private _gonsPerFragment;
-    uint256 private gonSwapThreshold;
-    bool private inSwap;
+    uint256 private _gonSwapThreshold;
+    bool private _inSwap;
     IUniswapV2Router02 public router;
     address public pair;
 
     modifier swapping() {
-        inSwap = true;
+        _inSwap = true;
         _;
-        inSwap = false;
+        _inSwap = false;
     }
 
     modifier validRecipient(address to) {
@@ -104,19 +104,19 @@ contract Eutopia is
         _allowedFragments[address(this)][pair] = type(uint256).max;
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
         _gonBalances[msg.sender] = TOTAL_GONS;
-        isFeeExempt[treasuryReceiver] = true;
-        isFeeExempt[riskFreeValueReceiver] = true;
-        isFeeExempt[address(this)] = true;
-        isFeeExempt[msg.sender] = true;
+        _isFeeExempt[treasuryReceiver] = true;
+        _isFeeExempt[riskFreeValueReceiver] = true;
+        _isFeeExempt[address(this)] = true;
+        _isFeeExempt[msg.sender] = true;
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _gonsPerFragment = TOTAL_GONS / _totalSupply;
-        gonSwapThreshold = TOTAL_GONS / 1000;
+        _gonSwapThreshold = TOTAL_GONS / 1000;
         router = IUniswapV2Router02(_router);
         pair = IUniswapV2Factory(router.factory()).createPair(
             address(this),
             router.WETH()
         );
-        inSwap = false;
+        _inSwap = false;
 
         emit Transfer(ZERO, msg.sender, _totalSupply);
     }
@@ -139,11 +139,11 @@ contract Eutopia is
     }
 
     function checkFeeExempt(address _addr) external view returns (bool) {
-        return isFeeExempt[_addr];
+        return _isFeeExempt[_addr];
     }
 
     function checkSwapThreshold() external view returns (uint256) {
-        return gonSwapThreshold / _gonsPerFragment;
+        return _gonSwapThreshold / _gonsPerFragment;
     }
 
     function shouldRebase() internal view returns (bool) {
@@ -154,7 +154,7 @@ contract Eutopia is
         address from,
         address to
     ) internal view returns (bool) {
-        if (isFeeExempt[from] || isFeeExempt[to]) {
+        if (_isFeeExempt[from] || _isFeeExempt[to]) {
             return false;
         } else {
             return (pair == from || pair == to);
@@ -164,9 +164,9 @@ contract Eutopia is
     function shouldSwapBack() internal view returns (bool) {
         return
             pair != msg.sender && ////
-            !inSwap &&
+            !_inSwap &&
             totalBuyFee + totalSellFee > 0 &&
-            _gonBalances[address(this)] >= gonSwapThreshold;
+            _gonBalances[address(this)] >= _gonSwapThreshold;
     }
 
     function getCirculatingSupply() public view returns (uint256) {
@@ -222,7 +222,7 @@ contract Eutopia is
         address recipient,
         uint256 amount
     ) internal returns (bool) {
-        if (inSwap) {
+        if (_inSwap) {
             return _basicTransfer(sender, recipient, amount);
         }
 
@@ -402,7 +402,7 @@ contract Eutopia is
     }
 
     function _rebase() private {
-        if (!inSwap) {
+        if (!_inSwap) {
             int256 supplyDelta = int256(
                 (_totalSupply * rewardYield) / rewardYieldDenominator
             );
@@ -437,7 +437,7 @@ contract Eutopia is
     }
 
     function manualRebase() external nonReentrant {
-        require(!inSwap, "Try again");
+        require(!_inSwap, "Try again");
         require(nextRebase <= block.timestamp, "Not in time");
 
         int256 supplyDelta = int256(
@@ -449,8 +449,8 @@ contract Eutopia is
     }
 
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
-        require(isFeeExempt[_addr] != _value, "Not changed");
-        isFeeExempt[_addr] = _value;
+        require(_isFeeExempt[_addr] != _value, "Not changed");
+        _isFeeExempt[_addr] = _value;
         emit SetFeeExempted(_addr, _value);
     }
 
@@ -467,7 +467,7 @@ contract Eutopia is
         uint256 _num,
         uint256 _denom
     ) external onlyOwner {
-        gonSwapThreshold = (TOTAL_GONS / _denom) * _num;
+        _gonSwapThreshold = (TOTAL_GONS / _denom) * _num;
         emit SetSwapBackSettings(_num, _denom);
     }
 
