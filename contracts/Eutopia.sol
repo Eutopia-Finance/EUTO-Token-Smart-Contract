@@ -186,10 +186,20 @@ contract Eutopia is
         return _gonSwapThreshold / _gonsPerFragment;
     }
 
+    /**
+     * @dev Determines whether a rebase should occur.
+     * @return A boolean indicating whether a rebase should occur.
+     */
     function _shouldRebase() internal view returns (bool) {
         return nextRebase <= block.timestamp;
     }
 
+    /**
+     * @dev Determines whether a fee should be taken for a transaction.
+     * @param _from The address from which the transaction originates.
+     * @param _to The address to which the transaction is being sent.
+     * @return A boolean indicating whether a fee should be taken.
+     */
     function _shouldTakeFee(
         address _from,
         address _to
@@ -201,6 +211,10 @@ contract Eutopia is
         }
     }
 
+    /**
+     * @dev Determines whether the contract should initiate a swap back operation.
+     * @return A boolean value indicating whether a swap back operation should be performed.
+     */
     function _shouldSwapBack() internal view returns (bool) {
         return
             uniswapPair != msg.sender &&
@@ -209,12 +223,23 @@ contract Eutopia is
             _gonBalances[address(this)] >= _gonSwapThreshold;
     }
 
+    /**
+     * @dev Returns the circulating supply of the Eutopia token.
+     * The circulating supply is calculated by subtracting the balances of the DEAD and ZERO addresses
+     * from the total supply in gons, and then dividing the result by the number of gons per fragment.
+     * @return The circulating supply of the Eutopia token.
+     */
     function getCirculatingSupply() public view returns (uint256) {
         return
             (TOTAL_GONS - _gonBalances[DEAD] - _gonBalances[ZERO]) /
             _gonsPerFragment;
     }
 
+    /**
+     * @dev Calculates the liquidity backing for the token.
+     * @param _accuracy The accuracy of the calculation.
+     * @return The liquidity backing value.
+     */
     function getLiquidityBacking(
         uint256 _accuracy
     ) public view returns (uint256) {
@@ -224,6 +249,12 @@ contract Eutopia is
             (getCirculatingSupply() / 10e9);
     }
 
+    /**
+     * @dev Checks if the liquidity backing is greater than the target.
+     * @param _target The target value to compare against.
+     * @param _accuracy The accuracy of the liquidity backing value.
+     * @return A boolean indicating whether the liquidity backing is greater than the target.
+     */
     function isOverLiquified(
         uint256 _target,
         uint256 _accuracy
@@ -231,10 +262,27 @@ contract Eutopia is
         return getLiquidityBacking(_accuracy) > _target;
     }
 
+    /**
+     * @dev Executes a manual synchronization of the Uniswap pair.
+     */
     function manualSync() public {
         IUniswapV2Pair(uniswapPair).sync();
     }
 
+    /**
+     * @dev Transfers tokens from the caller's address to a specified recipient.
+     * 
+     * Emits a {Transfer} event indicating the transfer of tokens.
+     * 
+     * Requirements:
+     * - `_to` cannot be the zero address.
+     * - The caller must have a balance of at least `_value` tokens.
+     * - The recipient must be a valid recipient (see {validRecipient} modifier).
+     * 
+     * @param _to The address to transfer tokens to.
+     * @param _value The amount of tokens to transfer.
+     * @return A boolean value indicating whether the transfer was successful.
+     */
     function transfer(
         address _to,
         uint256 _value
@@ -243,6 +291,15 @@ contract Eutopia is
         return true;
     }
 
+    /**
+     * @dev Internal function to perform a basic transfer of tokens.
+     * 
+     * @param _from The address from which the tokens are being transferred.
+     * @param _to The address to which the tokens are being transferred.
+     * @param _amount The amount of tokens being transferred.
+     * 
+     * @return A boolean indicating whether the transfer was successful or not.
+     */
     function _basicTransfer(
         address _from,
         address _to,
@@ -257,6 +314,15 @@ contract Eutopia is
         return true;
     }
 
+    /**
+     * @dev Internal function to transfer tokens from one address to another.
+     * 
+     * @param _sender The address sending the tokens.
+     * @param _recipient The address receiving the tokens.
+     * @param _amount The amount of tokens to transfer.
+     * 
+     * @return A boolean indicating whether the transfer was successful or not.
+     */
     function _transferFrom(
         address _sender,
         address _recipient,
@@ -294,6 +360,22 @@ contract Eutopia is
         return true;
     }
 
+    /**
+     * @dev Transfers tokens from one address to another.
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * Requirements:
+     * - `_from` cannot be the zero address.
+     * - `_to` cannot be the zero address.
+     * - `_from` must have a balance of at least `_value`.
+     * - The caller must have allowance for `_from`'s tokens of at least `_value`.
+     * 
+     * @param _from The address to transfer tokens from.
+     * @param _to The address to transfer tokens to.
+     * @param _value The amount of tokens to transfer.
+     * @return A boolean value indicating whether the transfer was successful or not.
+     */
     function transferFrom(
         address _from,
         address _to,
@@ -301,7 +383,7 @@ contract Eutopia is
     ) public override validRecipient(_to) returns (bool) {
         uint256 allowed = _allowedFragments[_from][msg.sender];
         if (allowed != type(uint256).max) {
-            require(allowed >= _value, "Insufficient Allowance");
+            require(allowed >= _value, "Eutopia: Insufficient allowance");
             _allowedFragments[_from][msg.sender] = allowed - _value;
         }
 
@@ -309,6 +391,10 @@ contract Eutopia is
         return true;
     }
 
+    /**
+     * @dev Internal function to swap and liquify tokens.
+     * @param _contractTokenBalance The balance of tokens held by the contract.
+     */
     function _swapAndLiquify(uint256 _contractTokenBalance) private {
         uint256 half = _contractTokenBalance / 2;
         uint256 otherHalf = _contractTokenBalance - half;
@@ -324,6 +410,11 @@ contract Eutopia is
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
+    /**
+     * @dev Adds liquidity to the contract by providing an amount of tokens and ETH.
+     * @param _tokenAmount The amount of tokens to add as liquidity.
+     * @param _ethAmount The amount of ETH to add as liquidity.
+     */
     function _addLiquidity(uint256 _tokenAmount, uint256 _ethAmount) private {
         uniswapRouter.addLiquidityETH{value: _ethAmount}(
             address(this),
@@ -335,6 +426,11 @@ contract Eutopia is
         );
     }
 
+    /**
+     * @dev Swaps a specified amount of tokens for ETH.
+     * @param _tokenAmount The amount of tokens to be swapped.
+     * @param _receiver The address that will receive the ETH.
+     */
     function _swapTokensForETH(
         uint256 _tokenAmount,
         address _receiver
@@ -352,6 +448,9 @@ contract Eutopia is
         );
     }
 
+    /**
+     * @dev Internal function to swap tokens back.
+     */
     function _swapBack() internal swapping {
         uint256 realTotalFee = totalBuyFee + totalSellFee;
 
@@ -393,6 +492,13 @@ contract Eutopia is
         );
     }
 
+    /**
+     * @dev Internal function to take a fee from a transaction.
+     * @param _sender The address of the sender.
+     * @param _recipient The address of the recipient.
+     * @param _gonAmount The amount of tokens in gons.
+     * @return The updated amount of tokens after the fee is taken.
+     */
     function _takeFee(
         address _sender,
         address _recipient,
@@ -409,6 +515,12 @@ contract Eutopia is
         return _gonAmount - feeAmount;
     }
 
+    /**
+     * @dev Decreases the allowance granted to a spender.
+     * @param _spender The address of the spender to decrease the allowance for.
+     * @param _subtractedValue The amount by which to decrease the allowance.
+     * @return A boolean value indicating whether the operation was successful.
+     */
     function decreaseAllowance(
         address _spender,
         uint256 _subtractedValue
@@ -425,6 +537,12 @@ contract Eutopia is
         return true;
     }
 
+    /**
+     * @dev Increases the allowance of the specified spender.
+     * @param _spender The address of the spender.
+     * @param _addedValue The amount by which to increase the allowance.
+     * @return A boolean value indicating whether the operation was successful.
+     */
     function increaseAllowance(
         address _spender,
         uint256 _addedValue
@@ -438,6 +556,12 @@ contract Eutopia is
         return true;
     }
 
+    /**
+     * @dev Approve the specified address to spend the specified amount of tokens on behalf of the message sender.
+     * @param _spender The address to be approved for spending tokens.
+     * @param _value The amount of tokens to be approved.
+     * @return A boolean value indicating whether the approval was successful or not.
+     */
     function approve(
         address _spender,
         uint256 _value
@@ -447,6 +571,12 @@ contract Eutopia is
         return true;
     }
 
+    /**
+     * @dev Internal function to perform rebase operation.
+     * @notice This function is called internally to adjust the total supply of the token based on the reward yield.
+     * @notice It calculates the supply delta by multiplying the total supply with the reward yield and dividing it by the reward yield denominator.
+     * @notice The rebase operation is only performed if the swap is not in progress.
+     */
     function _rebase() private {
         if (!_inSwap) {
             int256 supplyDelta = int256(
@@ -456,6 +586,11 @@ contract Eutopia is
         }
     }
 
+    /**
+     * @dev Performs a core rebase operation.
+     * @param _supplyDelta The change in token supply.
+     * @return The updated token supply.
+     */
     function _coreRebase(int256 _supplyDelta) private returns (uint256) {
         uint256 epoch = block.timestamp;
 
@@ -482,9 +617,14 @@ contract Eutopia is
         return _totalSupply;
     }
 
+    /**
+     * @dev Executes a manual rebase of the token supply.
+     * Only the contract owner can call this function.
+     * This function is non-reentrant.
+     */
     function manualRebase() external onlyOwner nonReentrant {
-        require(!_inSwap, "Try again");
-        require(nextRebase <= block.timestamp, "Not in time");
+        require(!_inSwap, "Error: In swap");
+        require(nextRebase <= block.timestamp, "Error: Too early");
 
         int256 supplyDelta = int256(
             (_totalSupply * rewardYield) / rewardYieldDenominator
@@ -494,12 +634,26 @@ contract Eutopia is
         emit ManualRebase(supplyDelta);
     }
 
+    /**
+     * @dev Sets the fee exemption status for a given address.
+     * @param _addr The address for which to set the fee exemption status.
+     * @param _value The new fee exemption status.
+     * Requirements:
+     * - Only the contract owner can call this function.
+     */
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
-        require(_isFeeExempt[_addr] != _value, "Not changed");
+        require(_isFeeExempt[_addr] != _value, "Error: Already set");
         _isFeeExempt[_addr] = _value;
         emit SetFeeExempted(_addr, _value);
     }
 
+    /**
+     * @dev Sets the target liquidity for the contract.
+     * @param _target The target liquidity value.
+     * @param _accuracy The accuracy of the target liquidity value.
+     * Requirements:
+     * - Only the contract owner can call this function.
+     */
     function setTargetLiquidity(
         uint256 _target,
         uint256 _accuracy
@@ -509,6 +663,13 @@ contract Eutopia is
         emit SetTargetLiquidity(_target, _accuracy);
     }
 
+    /**
+     * @dev Sets the swap back settings for the contract.
+     * @param _num The numerator value for calculating the swap threshold.
+     * @param _denom The denominator value for calculating the swap threshold.
+     * Requirements:
+     * - Only the contract owner can call this function.
+     */
     function setSwapBackSettings(
         uint256 _num,
         uint256 _denom
@@ -517,6 +678,14 @@ contract Eutopia is
         emit SetSwapBackSettings(_num, _denom);
     }
 
+    /**
+     * @dev Sets the fee receivers for the Eutopia token.
+     * Can only be called by the contract owner.
+     * 
+     * @param _liquidityReceiver The address of the liquidity receiver.
+     * @param _treasuryReceiver The address of the treasury receiver.
+     * @param _essrReceiver The address of the risk-free value receiver.
+     */
     function setFeeReceivers(
         address _liquidityReceiver,
         address _treasuryReceiver,
@@ -532,6 +701,16 @@ contract Eutopia is
         );
     }
 
+    /**
+     * @dev Sets the fees for the Eutopia token.
+     * @param _liquidityFee The fee percentage for liquidity.
+     * @param _riskFreeValue The fee percentage for risk-free value.
+     * @param _treasuryFee The fee percentage for the treasury.
+     * @param _sellFeeTreasury The fee percentage for selling to the treasury.
+     * @param _feeDenominator The denominator used to calculate the fees.
+     * Requirements:
+     * - Only the contract owner can call this function.
+     */
     function setFees(
         uint256 _liquidityFee,
         uint256 _riskFreeValue,
@@ -569,18 +748,38 @@ contract Eutopia is
         );
     }
 
+    /**
+     * @dev Clears the stuck balance of the contract by transferring it to the specified receiver.
+     * @param _receiver The address of the receiver to transfer the balance to.
+     * Emits a `ClearStuckBalance` event.
+     */
     function clearStuckBalance(address _receiver) external onlyOwner {
         uint256 balance = address(this).balance;
         payable(_receiver).transfer(balance);
         emit ClearStuckBalance(_receiver);
     }
 
+    /**
+     * @dev Sets the rebase frequency for the token.
+     * @param _rebaseFrequency The new rebase frequency to be set.
+     * @notice Only the contract owner can call this function.
+     * @notice The rebase frequency must be less than or equal to MAX_REBASE_FREQUENCY.
+     * @notice Emits a SetRebaseFrequency event with the new rebase frequency.
+     */
     function setRebaseFrequency(uint256 _rebaseFrequency) external onlyOwner {
         require(_rebaseFrequency <= MAX_REBASE_FREQUENCY, "Too high");
         rebaseFrequency = _rebaseFrequency;
         emit SetRebaseFrequency(_rebaseFrequency);
     }
 
+    /**
+     * @dev Sets the reward yield for the Eutopia token.
+     * @param _rewardYield The new reward yield value.
+     * @param _rewardYieldDenominator The new reward yield denominator value.
+     * Emits a {SetRewardYield} event with the new reward yield and reward yield denominator values.
+     * Requirements:
+     * - Only the contract owner can call this function.
+     */
     function setRewardYield(
         uint256 _rewardYield,
         uint256 _rewardYieldDenominator
@@ -590,6 +789,13 @@ contract Eutopia is
         emit SetRewardYield(_rewardYield, _rewardYieldDenominator);
     }
 
+    /**
+     * @dev Sets the value of `nextRebase`.
+     * Can only be called by the contract owner.
+     * Emits a {SetNextRebase} event.
+     *
+     * @param _nextRebase The new value for `nextRebase`.
+     */
     function setNextRebase(uint256 _nextRebase) external onlyOwner {
         nextRebase = _nextRebase;
         emit SetNextRebase(_nextRebase);
