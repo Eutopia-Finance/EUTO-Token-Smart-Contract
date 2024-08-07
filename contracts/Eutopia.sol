@@ -53,8 +53,8 @@ contract Eutopia is
     uint256 private _gonsPerFragment;
     uint256 private _gonSwapThreshold;
     bool private _inSwap;
-    IUniswapV2Router02 public router;
-    address public pair;
+    IUniswapV2Router02 public uniswapRouter;
+    address public uniswapPair;
 
     modifier swapping() {
         _inSwap = true;
@@ -74,7 +74,7 @@ contract Eutopia is
 
     function initialize(
         address _initialOwner,
-        address _router,
+        address _uniswapRouter,
         address _liquidityReceiver,
         address _treasuryReceiver,
         address _essrReceiver
@@ -100,8 +100,8 @@ contract Eutopia is
         totalSellFee = totalBuyFee + sellFeeTreasury;
         feeDenominator = 100;
 
-        _allowedFragments[address(this)][address(router)] = type(uint256).max;
-        _allowedFragments[address(this)][pair] = type(uint256).max;
+        _allowedFragments[address(this)][address(uniswapRouter)] = type(uint256).max;
+        _allowedFragments[address(this)][uniswapPair] = type(uint256).max;
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
         _gonBalances[msg.sender] = TOTAL_GONS;
         _isFeeExempt[treasuryReceiver] = true;
@@ -111,10 +111,10 @@ contract Eutopia is
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _gonsPerFragment = TOTAL_GONS / _totalSupply;
         _gonSwapThreshold = TOTAL_GONS / 1000;
-        router = IUniswapV2Router02(_router);
-        pair = IUniswapV2Factory(router.factory()).createPair(
+        uniswapRouter = IUniswapV2Router02(_uniswapRouter);
+        uniswapPair = IUniswapV2Factory(uniswapRouter.factory()).createPair(
             address(this),
-            router.WETH()
+            uniswapRouter.WETH()
         );
         _inSwap = false;
 
@@ -157,13 +157,13 @@ contract Eutopia is
         if (_isFeeExempt[from] || _isFeeExempt[to]) {
             return false;
         } else {
-            return (pair == from || pair == to);
+            return (uniswapPair == from || uniswapPair == to);
         }
     }
 
     function shouldSwapBack() internal view returns (bool) {
         return
-            pair != msg.sender && ////
+            uniswapPair != msg.sender && ////
             !_inSwap &&
             totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= _gonSwapThreshold;
@@ -178,7 +178,7 @@ contract Eutopia is
     function getLiquidityBacking(
         uint256 accuracy
     ) public view returns (uint256) {
-        uint256 liquidityBalance = balanceOf(pair) / 10 ** 9;
+        uint256 liquidityBalance = balanceOf(uniswapPair) / 10 ** 9;
         return
             (accuracy * liquidityBalance * 2) /
             (getCirculatingSupply() / 10 ** 9);
@@ -192,7 +192,7 @@ contract Eutopia is
     }
 
     function manualSync() public {
-        IUniswapV2Pair(pair).sync();
+        IUniswapV2Pair(uniswapPair).sync();
     }
 
     function transfer(
@@ -243,7 +243,7 @@ contract Eutopia is
 
         if (shouldRebase()) {
             _rebase();
-            if (pair != sender && pair != recipient) {
+            if (uniswapPair != sender && uniswapPair != recipient) {
                 manualSync();
             }
         }
@@ -282,7 +282,7 @@ contract Eutopia is
     }
 
     function _addLiquidity(uint256 tokenAmount, uint256 bnbAmount) private {
-        router.addLiquidityETH{value: bnbAmount}(
+        uniswapRouter.addLiquidityETH{value: bnbAmount}(
             address(this),
             tokenAmount,
             0,
@@ -295,9 +295,9 @@ contract Eutopia is
     function _swapTokensForBNB(uint256 tokenAmount, address receiver) private {
         address[] memory path = new address[](2);
         path[0] = address(this);
-        path[1] = router.WETH();
+        path[1] = uniswapRouter.WETH();
 
-        router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
             tokenAmount,
             0,
             path,
@@ -353,7 +353,7 @@ contract Eutopia is
         uint256 gonAmount
     ) internal returns (uint256) {
         uint256 _realFee = totalBuyFee;
-        if (pair == recipient) _realFee = totalSellFee;
+        if (uniswapPair == recipient) _realFee = totalSellFee;
 
         uint256 feeAmount = (gonAmount * _realFee) / feeDenominator;
 
