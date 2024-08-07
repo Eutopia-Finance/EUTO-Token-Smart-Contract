@@ -45,7 +45,7 @@ contract Eutopia is
     uint256 public totalBuyFee;
     uint256 public totalSellFee;
     uint256 public feeDenominator;
-    
+
     mapping(address => mapping(address => uint256)) private _allowedFragments;
     mapping(address => uint256) private _gonBalances;
     mapping(address => bool) private _isFeeExempt;
@@ -62,8 +62,8 @@ contract Eutopia is
         _inSwap = false;
     }
 
-    modifier validRecipient(address to) {
-        require(to != ZERO, "Recipient zero address");
+    modifier validRecipient(address _to) {
+        require(_to != ZERO, "Recipient zero address");
         _;
     }
 
@@ -100,7 +100,8 @@ contract Eutopia is
         totalSellFee = totalBuyFee + sellFeeTreasury;
         feeDenominator = 100;
 
-        _allowedFragments[address(this)][address(uniswapRouter)] = type(uint256).max;
+        _allowedFragments[address(this)][address(uniswapRouter)] = type(uint256)
+            .max;
         _allowedFragments[address(this)][uniswapPair] = type(uint256).max;
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
         _gonBalances[msg.sender] = TOTAL_GONS;
@@ -128,14 +129,14 @@ contract Eutopia is
     }
 
     function allowance(
-        address owner_,
-        address spender
+        address _owner,
+        address _spender
     ) public view override returns (uint256) {
-        return _allowedFragments[owner_][spender];
+        return _allowedFragments[_owner][_spender];
     }
 
-    function balanceOf(address who) public view override returns (uint256) {
-        return _gonBalances[who] / _gonsPerFragment;
+    function balanceOf(address _who) public view override returns (uint256) {
+        return _gonBalances[_who] / _gonsPerFragment;
     }
 
     function checkFeeExempt(address _addr) external view returns (bool) {
@@ -146,24 +147,24 @@ contract Eutopia is
         return _gonSwapThreshold / _gonsPerFragment;
     }
 
-    function shouldRebase() internal view returns (bool) {
+    function _shouldRebase() internal view returns (bool) {
         return nextRebase <= block.timestamp;
     }
 
-    function shouldTakeFee(
-        address from,
-        address to
+    function _shouldTakeFee(
+        address _from,
+        address _to
     ) internal view returns (bool) {
-        if (_isFeeExempt[from] || _isFeeExempt[to]) {
+        if (_isFeeExempt[_from] || _isFeeExempt[_to]) {
             return false;
         } else {
-            return (uniswapPair == from || uniswapPair == to);
+            return (uniswapPair == _from || uniswapPair == _to);
         }
     }
 
-    function shouldSwapBack() internal view returns (bool) {
+    function _shouldSwapBack() internal view returns (bool) {
         return
-            uniswapPair != msg.sender && ////
+            uniswapPair != msg.sender &&
             !_inSwap &&
             totalBuyFee + totalSellFee > 0 &&
             _gonBalances[address(this)] >= _gonSwapThreshold;
@@ -176,19 +177,19 @@ contract Eutopia is
     }
 
     function getLiquidityBacking(
-        uint256 accuracy
+        uint256 _accuracy
     ) public view returns (uint256) {
-        uint256 liquidityBalance = balanceOf(uniswapPair) / 10 ** 9;
+        uint256 liquidityBalance = balanceOf(uniswapPair) / 10e9;
         return
-            (accuracy * liquidityBalance * 2) /
-            (getCirculatingSupply() / 10 ** 9);
+            (_accuracy * liquidityBalance * 2) /
+            (getCirculatingSupply() / 10e9);
     }
 
     function isOverLiquified(
-        uint256 target,
-        uint256 accuracy
+        uint256 _target,
+        uint256 _accuracy
     ) public view returns (bool) {
-        return getLiquidityBacking(accuracy) > target;
+        return getLiquidityBacking(_accuracy) > _target;
     }
 
     function manualSync() public {
@@ -196,79 +197,82 @@ contract Eutopia is
     }
 
     function transfer(
-        address to,
-        uint256 value
-    ) public override validRecipient(to) returns (bool) {
-        _transferFrom(msg.sender, to, value);
+        address _to,
+        uint256 _value
+    ) public override validRecipient(_to) returns (bool) {
+        _transferFrom(msg.sender, _to, _value);
         return true;
     }
 
     function _basicTransfer(
-        address from,
-        address to,
-        uint256 amount
+        address _from,
+        address _to,
+        uint256 _amount
     ) internal returns (bool) {
-        uint256 gonAmount = amount * _gonsPerFragment;
-        _gonBalances[from] -= gonAmount;
-        _gonBalances[to] += gonAmount;
+        uint256 gonAmount = _amount * _gonsPerFragment;
+        _gonBalances[_from] -= gonAmount;
+        _gonBalances[_to] += gonAmount;
 
-        emit Transfer(from, to, amount);
+        emit Transfer(_from, _to, _amount);
 
         return true;
     }
 
     function _transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
+        address _sender,
+        address _recipient,
+        uint256 _amount
     ) internal returns (bool) {
         if (_inSwap) {
-            return _basicTransfer(sender, recipient, amount);
+            return _basicTransfer(_sender, _recipient, _amount);
         }
 
-        uint256 gonAmount = amount * _gonsPerFragment;
+        uint256 gonAmount = _amount * _gonsPerFragment;
 
-        if (shouldSwapBack()) {
-            swapBack();
+        if (_shouldSwapBack()) {
+            _swapBack();
         }
 
-        _gonBalances[sender] -= gonAmount;
+        _gonBalances[_sender] -= gonAmount;
 
-        uint256 gonAmountReceived = shouldTakeFee(sender, recipient)
-            ? takeFee(sender, recipient, gonAmount)
+        uint256 gonAmountReceived = _shouldTakeFee(_sender, _recipient)
+            ? _takeFee(_sender, _recipient, gonAmount)
             : gonAmount;
-        _gonBalances[recipient] += gonAmountReceived;
+        _gonBalances[_recipient] += gonAmountReceived;
 
-        emit Transfer(sender, recipient, gonAmountReceived / _gonsPerFragment);
+        emit Transfer(
+            _sender,
+            _recipient,
+            gonAmountReceived / _gonsPerFragment
+        );
 
-        if (shouldRebase()) {
+        if (_shouldRebase()) {
             _rebase();
-            if (uniswapPair != sender && uniswapPair != recipient) {
+            if (uniswapPair != _sender && uniswapPair != _recipient)
                 manualSync();
-            }
         }
 
         return true;
     }
 
     function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) public override validRecipient(to) returns (bool) {
-        uint256 allowed = _allowedFragments[from][msg.sender];
+        address _from,
+        address _to,
+        uint256 _value
+    ) public override validRecipient(_to) returns (bool) {
+        uint256 allowed = _allowedFragments[_from][msg.sender];
         if (allowed != type(uint256).max) {
-            require(allowed >= value, "Insufficient Allowance");
-            _allowedFragments[from][msg.sender] = allowed - value;
+            require(allowed >= _value, "Insufficient Allowance");
+            _allowedFragments[_from][msg.sender] = allowed - _value;
         }
 
-        _transferFrom(from, to, value);
+        _transferFrom(_from, _to, _value);
         return true;
     }
 
-    function _swapAndLiquify(uint256 contractTokenBalance) private {
-        uint256 half = contractTokenBalance / 2;
-        uint256 otherHalf = contractTokenBalance - half;
+    function _swapAndLiquify(uint256 _contractTokenBalance) private {
+        uint256 half = _contractTokenBalance / 2;
+        uint256 otherHalf = _contractTokenBalance - half;
 
         uint256 initialBalance = address(this).balance;
 
@@ -281,10 +285,10 @@ contract Eutopia is
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
-    function _addLiquidity(uint256 tokenAmount, uint256 bnbAmount) private {
-        uniswapRouter.addLiquidityETH{value: bnbAmount}(
+    function _addLiquidity(uint256 _tokenAmount, uint256 _bnbAmount) private {
+        uniswapRouter.addLiquidityETH{value: _bnbAmount}(
             address(this),
-            tokenAmount,
+            _tokenAmount,
             0,
             0,
             liquidityReceiver,
@@ -292,21 +296,24 @@ contract Eutopia is
         );
     }
 
-    function _swapTokensForBNB(uint256 tokenAmount, address receiver) private {
+    function _swapTokensForBNB(
+        uint256 _tokenAmount,
+        address _receiver
+    ) private {
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = uniswapRouter.WETH();
 
         uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            tokenAmount,
+            _tokenAmount,
             0,
             path,
-            receiver,
+            _receiver,
             block.timestamp
         );
     }
 
-    function swapBack() internal swapping {
+    function _swapBack() internal swapping {
         uint256 realTotalFee = totalBuyFee + totalSellFee;
 
         uint256 dynamicLiquidityFee = isOverLiquified(
@@ -347,57 +354,57 @@ contract Eutopia is
         );
     }
 
-    function takeFee(
-        address sender,
-        address recipient,
-        uint256 gonAmount
+    function _takeFee(
+        address _sender,
+        address _recipient,
+        uint256 _gonAmount
     ) internal returns (uint256) {
         uint256 _realFee = totalBuyFee;
-        if (uniswapPair == recipient) _realFee = totalSellFee;
+        if (uniswapPair == _recipient) _realFee = totalSellFee;
 
-        uint256 feeAmount = (gonAmount * _realFee) / feeDenominator;
+        uint256 feeAmount = (_gonAmount * _realFee) / feeDenominator;
 
         _gonBalances[address(this)] += feeAmount;
-        emit Transfer(sender, address(this), feeAmount / _gonsPerFragment);
+        emit Transfer(_sender, address(this), feeAmount / _gonsPerFragment);
 
-        return gonAmount - feeAmount;
+        return _gonAmount - feeAmount;
     }
 
     function decreaseAllowance(
-        address spender,
-        uint256 subtractedValue
+        address _spender,
+        uint256 _subtractedValue
     ) external returns (bool) {
-        uint256 oldValue = _allowedFragments[msg.sender][spender];
-        _allowedFragments[msg.sender][spender] = subtractedValue >= oldValue
+        uint256 oldValue = _allowedFragments[msg.sender][_spender];
+        _allowedFragments[msg.sender][_spender] = _subtractedValue >= oldValue
             ? 0
-            : oldValue - subtractedValue;
+            : oldValue - _subtractedValue;
         emit Approval(
             msg.sender,
-            spender,
-            _allowedFragments[msg.sender][spender]
+            _spender,
+            _allowedFragments[msg.sender][_spender]
         );
         return true;
     }
 
     function increaseAllowance(
-        address spender,
-        uint256 addedValue
+        address _spender,
+        uint256 _addedValue
     ) external returns (bool) {
-        _allowedFragments[msg.sender][spender] += addedValue;
+        _allowedFragments[msg.sender][_spender] += _addedValue;
         emit Approval(
             msg.sender,
-            spender,
-            _allowedFragments[msg.sender][spender]
+            _spender,
+            _allowedFragments[msg.sender][_spender]
         );
         return true;
     }
 
     function approve(
-        address spender,
-        uint256 value
+        address _spender,
+        uint256 _value
     ) public override returns (bool) {
-        _allowedFragments[msg.sender][spender] = value;
-        emit Approval(msg.sender, spender, value);
+        _allowedFragments[msg.sender][_spender] = _value;
+        emit Approval(msg.sender, _spender, _value);
         return true;
     }
 
@@ -406,22 +413,22 @@ contract Eutopia is
             int256 supplyDelta = int256(
                 (_totalSupply * rewardYield) / rewardYieldDenominator
             );
-            coreRebase(supplyDelta);
+            _coreRebase(supplyDelta);
         }
     }
 
-    function coreRebase(int256 supplyDelta) private returns (uint256) {
+    function _coreRebase(int256 _supplyDelta) private returns (uint256) {
         uint256 epoch = block.timestamp;
 
-        if (supplyDelta == 0) {
+        if (_supplyDelta == 0) {
             emit LogRebase(epoch, _totalSupply);
             return _totalSupply;
         }
 
-        if (supplyDelta < 0) {
-            _totalSupply -= uint256(-supplyDelta);
+        if (_supplyDelta < 0) {
+            _totalSupply -= uint256(-_supplyDelta);
         } else {
-            _totalSupply += uint256(supplyDelta);
+            _totalSupply += uint256(_supplyDelta);
         }
 
         if (_totalSupply > MAX_SUPPLY) {
@@ -443,7 +450,7 @@ contract Eutopia is
         int256 supplyDelta = int256(
             (_totalSupply * rewardYield) / rewardYieldDenominator
         );
-        coreRebase(supplyDelta);
+        _coreRebase(supplyDelta);
         manualSync();
         emit ManualRebase(supplyDelta);
     }
@@ -455,12 +462,12 @@ contract Eutopia is
     }
 
     function setTargetLiquidity(
-        uint256 target,
-        uint256 accuracy
+        uint256 _target,
+        uint256 _accuracy
     ) external onlyOwner {
-        targetLiquidity = target;
-        targetLiquidityDenominator = accuracy;
-        emit SetTargetLiquidity(target, accuracy);
+        targetLiquidity = _target;
+        targetLiquidityDenominator = _accuracy;
+        emit SetTargetLiquidity(_target, _accuracy);
     }
 
     function setSwapBackSettings(
@@ -550,25 +557,25 @@ contract Eutopia is
     }
 
     event SwapBack(
-        uint256 contractTokenBalance,
-        uint256 amountToLiquify,
-        uint256 amountToEssr,
-        uint256 amountToTreasury
+        uint256 _contractTokenBalance,
+        uint256 _amountToLiquify,
+        uint256 _amountToEssr,
+        uint256 _amountToTreasury
     );
     event SwapAndLiquify(
-        uint256 tokensSwapped,
-        uint256 bnbReceived,
-        uint256 tokensIntoLiqudity
+        uint256 _tokensSwapped,
+        uint256 _bnbReceived,
+        uint256 _tokensIntoLiqudity
     );
-    event LogRebase(uint256 indexed epoch, uint256 totalSupply);
-    event ManualRebase(int256 supplyDelta);
-    event SetFeeExempted(address _addr, bool _value);
-    event SetTargetLiquidity(uint256 target, uint256 accuracy);
+    event LogRebase(uint256 indexed _epoch, uint256 _totalSupply);
+    event ManualRebase(int256 _supplyDelta);
+    event SetFeeExempted(address indexed _addr, bool _value);
+    event SetTargetLiquidity(uint256 _target, uint256 _accuracy);
     event SetSwapBackSettings(uint256 _num, uint256 _denom);
     event SetFeeReceivers(
-        address _liquidityReceiver,
-        address _treasuryReceiver,
-        address _essrReceiver
+        address indexed _liquidityReceiver,
+        address indexed _treasuryReceiver,
+        address indexed _essrReceiver
     );
     event SetFees(
         uint256 _liquidityFee,
@@ -577,7 +584,7 @@ contract Eutopia is
         uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     );
-    event ClearStuckBalance(address _receiver);
+    event ClearStuckBalance(address indexed _receiver);
     event SetRebaseFrequency(uint256 _rebaseFrequency);
     event SetRewardYield(uint256 _rewardYield, uint256 _rewardYieldDenominator);
     event SetNextRebase(uint256 _nextRebase);
