@@ -11,10 +11,6 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "hardhat/console.sol";
 
-/**
- * @title Eutopia
- * @dev This contract represents the Eutopia token smart contract. It is an ERC20 token that is upgradeable and includes functionality for ownership and reentrancy guard.
- */
 contract Eutopia is
     Initializable,
     ERC20Upgradeable,
@@ -619,10 +615,9 @@ contract Eutopia is
 
     /**
      * @dev Executes a manual rebase of the token supply.
-     * Only the contract owner can call this function.
      * This function is non-reentrant.
      */
-    function manualRebase() external onlyOwner nonReentrant {
+    function manualRebase() external nonReentrant {
         require(!_inSwap, "Euotopia: Swap in progress");
         require(nextRebase <= block.timestamp, "Eutoipa: Too soon");
 
