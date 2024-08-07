@@ -11,6 +11,10 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "hardhat/console.sol";
 
+/**
+ * @title Eutopia
+ * @dev This contract represents the Eutopia token smart contract. It is an ERC20 token that is upgradeable and includes functionality for ownership and reentrancy guard.
+ */
 contract Eutopia is
     Initializable,
     ERC20Upgradeable,
@@ -63,7 +67,7 @@ contract Eutopia is
     }
 
     modifier validRecipient(address _to) {
-        require(_to != ZERO, "Recipient zero address");
+        require(_to != ZERO, "Eutopia: Invalid recipient");
         _;
     }
 
@@ -72,6 +76,14 @@ contract Eutopia is
         _disableInitializers();
     }
 
+    /**
+     * @dev Initializes the contract with the specified parameters.
+     * @param _initialOwner The address of the initial owner.
+     * @param _uniswapRouter The address of the Uniswap router.
+     * @param _liquidityReceiver The address of the liquidity receiver.
+     * @param _treasuryReceiver The address of the treasury receiver.
+     * @param _essrReceiver The address of the ESSR receiver.
+     */
     function initialize(
         address _initialOwner,
         address _uniswapRouter,
@@ -122,12 +134,25 @@ contract Eutopia is
         emit Transfer(ZERO, msg.sender, _totalSupply);
     }
 
+    /**
+     * @dev Fallback function to receive Ether.
+     */
     receive() external payable {}
 
+    /**
+     * @dev Returns the total supply of the token.
+     * @return The total supply of the token as a uint256 value.
+     */
     function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
+    /**
+     * @dev Returns the amount of tokens that the spender is allowed to transfer on behalf of the owner.
+     * @param _owner The address of the owner.
+     * @param _spender The address of the spender.
+     * @return The amount of tokens allowed to be transferred.
+     */
     function allowance(
         address _owner,
         address _spender
@@ -135,14 +160,28 @@ contract Eutopia is
         return _allowedFragments[_owner][_spender];
     }
 
+    /**
+     * @dev Returns the balance of a specific address.
+     * @param _who The address to query the balance of.
+     * @return The balance of the specified address.
+     */
     function balanceOf(address _who) public view override returns (uint256) {
         return _gonBalances[_who] / _gonsPerFragment;
     }
 
+    /**
+     * @dev Returns whether the given address is exempt from fees.
+     * @param _addr The address to check.
+     * @return A boolean indicating whether the address is fee exempt.
+     */
     function checkFeeExempt(address _addr) external view returns (bool) {
         return _isFeeExempt[_addr];
     }
 
+    /**
+     * @dev Returns the swap threshold in EUTO tokens.
+     * @return The swap threshold in EUTO tokens.
+     */
     function checkSwapThreshold() external view returns (uint256) {
         return _gonSwapThreshold / _gonsPerFragment;
     }
