@@ -40,7 +40,7 @@ contract Eutopia is
     uint256 public targetLiquidityDenominator;
     address public liquidityReceiver;
     address public treasuryReceiver;
-    address public riskFreeValueReceiver;
+    address public essrReceiver;
 
     uint256 public liquidityFee;
     uint256 public treasuryFee;
@@ -102,7 +102,7 @@ contract Eutopia is
         targetLiquidityDenominator = 100;
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _essrReceiver;
+        essrReceiver = _essrReceiver;
 
         liquidityFee = 5;
         treasuryFee = 5;
@@ -118,7 +118,7 @@ contract Eutopia is
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
         _gonBalances[msg.sender] = TOTAL_GONS;
         _isFeeExempt[treasuryReceiver] = true;
-        _isFeeExempt[riskFreeValueReceiver] = true;
+        _isFeeExempt[essrReceiver] = true;
         _isFeeExempt[address(this)] = true;
         _isFeeExempt[msg.sender] = true;
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
@@ -477,7 +477,7 @@ contract Eutopia is
         }
 
         if (amountToEssr > 0) {
-            _swapTokensForETH(amountToEssr, riskFreeValueReceiver);
+            _swapTokensForETH(amountToEssr, essrReceiver);
         }
 
         if (amountToTreasury > 0) {
@@ -684,7 +684,7 @@ contract Eutopia is
      * 
      * @param _liquidityReceiver The address of the liquidity receiver.
      * @param _treasuryReceiver The address of the treasury receiver.
-     * @param _essrReceiver The address of the risk-free value receiver.
+     * @param _essrReceiver The address of the elastic supply stability reserve value receiver.
      */
     function setFeeReceivers(
         address _liquidityReceiver,
@@ -693,7 +693,7 @@ contract Eutopia is
     ) external onlyOwner {
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _essrReceiver;
+        essrReceiver = _essrReceiver;
         emit SetFeeReceivers(
             _liquidityReceiver,
             _treasuryReceiver,
@@ -704,7 +704,7 @@ contract Eutopia is
     /**
      * @dev Sets the fees for the Eutopia token.
      * @param _liquidityFee The fee percentage for liquidity.
-     * @param _riskFreeValue The fee percentage for risk-free value.
+     * @param _essrValue The fee percentage for elastic supply stability reserve.
      * @param _treasuryFee The fee percentage for the treasury.
      * @param _sellFeeTreasury The fee percentage for selling to the treasury.
      * @param _feeDenominator The denominator used to calculate the fees.
@@ -713,21 +713,21 @@ contract Eutopia is
      */
     function setFees(
         uint256 _liquidityFee,
-        uint256 _riskFreeValue,
+        uint256 _essrValue,
         uint256 _treasuryFee,
         uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     ) external onlyOwner {
         require(
             _liquidityFee <= MAX_FEE_RATE &&
-                _riskFreeValue <= MAX_FEE_RATE &&
+                _essrValue <= MAX_FEE_RATE &&
                 _treasuryFee <= MAX_FEE_RATE &&
                 _sellFeeTreasury <= MAX_FEE_RATE,
             "Eutoipa: Fee too high"
         );
 
         liquidityFee = _liquidityFee;
-        buyFeeEssr = _riskFreeValue;
+        buyFeeEssr = _essrValue;
         treasuryFee = _treasuryFee;
         sellFeeTreasury = _sellFeeTreasury;
         totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
@@ -741,7 +741,7 @@ contract Eutopia is
 
         emit SetFees(
             _liquidityFee,
-            _riskFreeValue,
+            _essrValue,
             _treasuryFee,
             _sellFeeTreasury,
             _feeDenominator
@@ -824,7 +824,7 @@ contract Eutopia is
     );
     event SetFees(
         uint256 _liquidityFee,
-        uint256 _riskFreeValue,
+        uint256 _essrValue,
         uint256 _treasuryFee,
         uint256 _sellFeeTreasury,
         uint256 _feeDenominator
