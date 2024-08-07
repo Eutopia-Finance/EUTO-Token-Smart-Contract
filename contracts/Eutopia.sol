@@ -443,7 +443,7 @@ contract Eutopia is
         return _totalSupply;
     }
 
-    function manualRebase() external nonReentrant {
+    function manualRebase() external onlyOwner nonReentrant {
         require(!_inSwap, "Try again");
         require(nextRebase <= block.timestamp, "Not in time");
 
