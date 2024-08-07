@@ -276,7 +276,7 @@ contract Eutopia is
 
         uint256 initialBalance = address(this).balance;
 
-        _swapTokensForBNB(half, address(this));
+        _swapTokensForETH(half, address(this));
 
         uint256 newBalance = address(this).balance - initialBalance;
 
@@ -285,8 +285,8 @@ contract Eutopia is
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
-    function _addLiquidity(uint256 _tokenAmount, uint256 _bnbAmount) private {
-        uniswapRouter.addLiquidityETH{value: _bnbAmount}(
+    function _addLiquidity(uint256 _tokenAmount, uint256 _ethAmount) private {
+        uniswapRouter.addLiquidityETH{value: _ethAmount}(
             address(this),
             _tokenAmount,
             0,
@@ -296,7 +296,7 @@ contract Eutopia is
         );
     }
 
-    function _swapTokensForBNB(
+    function _swapTokensForETH(
         uint256 _tokenAmount,
         address _receiver
     ) private {
@@ -339,11 +339,11 @@ contract Eutopia is
         }
 
         if (amountToEssr > 0) {
-            _swapTokensForBNB(amountToEssr, riskFreeValueReceiver);
+            _swapTokensForETH(amountToEssr, riskFreeValueReceiver);
         }
 
         if (amountToTreasury > 0) {
-            _swapTokensForBNB(amountToTreasury, treasuryReceiver);
+            _swapTokensForETH(amountToTreasury, treasuryReceiver);
         }
 
         emit SwapBack(
@@ -564,7 +564,7 @@ contract Eutopia is
     );
     event SwapAndLiquify(
         uint256 _tokensSwapped,
-        uint256 _bnbReceived,
+        uint256 _ethReceived,
         uint256 _tokensIntoLiqudity
     );
     event LogRebase(uint256 indexed _epoch, uint256 _totalSupply);
