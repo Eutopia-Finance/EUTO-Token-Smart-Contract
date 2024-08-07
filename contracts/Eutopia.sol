@@ -623,8 +623,8 @@ contract Eutopia is
      * This function is non-reentrant.
      */
     function manualRebase() external onlyOwner nonReentrant {
-        require(!_inSwap, "Error: In swap");
-        require(nextRebase <= block.timestamp, "Error: Too early");
+        require(!_inSwap, "Euotopia: Swap in progress");
+        require(nextRebase <= block.timestamp, "Eutoipa: Too soon");
 
         int256 supplyDelta = int256(
             (_totalSupply * rewardYield) / rewardYieldDenominator
@@ -642,7 +642,7 @@ contract Eutopia is
      * - Only the contract owner can call this function.
      */
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
-        require(_isFeeExempt[_addr] != _value, "Error: Already set");
+        require(_isFeeExempt[_addr] != _value, "Eutoipa: Value already set");
         _isFeeExempt[_addr] = _value;
         emit SetFeeExempted(_addr, _value);
     }
@@ -723,7 +723,7 @@ contract Eutopia is
                 _riskFreeValue <= MAX_FEE_RATE &&
                 _treasuryFee <= MAX_FEE_RATE &&
                 _sellFeeTreasury <= MAX_FEE_RATE,
-            "wrong"
+            "Eutoipa: Fee too high"
         );
 
         liquidityFee = _liquidityFee;
@@ -733,11 +733,11 @@ contract Eutopia is
         totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
         totalSellFee = totalBuyFee + sellFeeTreasury;
 
-        require(totalBuyFee <= MAX_FEE_BUY, "Total BUY fee is too high");
-        require(totalSellFee <= MAX_FEE_SELL, "Total SELL fee is too high");
+        require(totalBuyFee <= MAX_FEE_BUY, "Eutopia: Total BUY fee too high");
+        require(totalSellFee <= MAX_FEE_SELL, "Eutopia: Total SELL fee too high");
 
         feeDenominator = _feeDenominator;
-        require(totalBuyFee < feeDenominator / 4, "totalBuyFee");
+        require(totalBuyFee < feeDenominator / 4, "Eutopia: Buy fee too high");
 
         emit SetFees(
             _liquidityFee,
@@ -767,7 +767,7 @@ contract Eutopia is
      * @notice Emits a SetRebaseFrequency event with the new rebase frequency.
      */
     function setRebaseFrequency(uint256 _rebaseFrequency) external onlyOwner {
-        require(_rebaseFrequency <= MAX_REBASE_FREQUENCY, "Too high");
+        require(_rebaseFrequency <= MAX_REBASE_FREQUENCY, "Eutopia: Invalid rebase frequency");
         rebaseFrequency = _rebaseFrequency;
         emit SetRebaseFrequency(_rebaseFrequency);
     }
