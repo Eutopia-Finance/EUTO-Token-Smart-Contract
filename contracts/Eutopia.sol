@@ -64,14 +64,49 @@ contract Eutopia is
      */
     uint256 private constant MAX_FEE_SELL = 18;
 
+    /**
+     * @dev Represents the reward yield for the Eutopia token.
+     */
     uint256 public rewardYield;
+
+    /**
+     * @dev Represents the reward yield denominator.
+     */
     uint256 public rewardYieldDenominator;
+
+    /**
+     * @dev Specifies the frequency of the rebase operation.
+     */
     uint256 public rebaseFrequency;
+
+    /**
+     * @dev Represents the timestamp for the next rebase.
+     */
     uint256 public nextRebase;
+
+    /**
+     * @dev Represents the target liquidity of the contract.
+     */
     uint256 public targetLiquidity;
+
+    /**
+     * @dev Represents the target liquidity denominator.
+     */
     uint256 public targetLiquidityDenominator;
+
+    /**
+     * @dev The address that will receive the liquidity.
+     */
     address public liquidityReceiver;
+
+    /**
+     * @dev The address of the treasury receiver.
+     */
     address public treasuryReceiver;
+
+    /**
+     * @dev The address of the ESSR receiver.
+     */
     address public essrReceiver;
 
     uint256 public liquidityFee;
