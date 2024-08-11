@@ -200,6 +200,12 @@ contract Eutopia is
         _inSwap = false;
     }
 
+    /**
+     * @dev Modifier to check if the recipient address is valid.
+     * @param _to The address of the recipient.
+     * Requirements:
+     * - The recipient address must not be the zero address.
+     */
     modifier validRecipient(address _to) {
         require(_to != ZERO, "Eutopia: Invalid recipient");
         _;
