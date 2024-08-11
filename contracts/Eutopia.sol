@@ -17,15 +17,51 @@ contract Eutopia is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    /**
+     * @dev Represents the zero address.
+     */
     address private constant ZERO = 0x0000000000000000000000000000000000000000;
+
+    /**
+     * @dev Represents the address constant for the dead address.
+     */
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
+    
+    /**
+     * @dev The initial supply of fragments for the Eutopia token.
+     */
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 24 * 10e8 * 10e18;
+
+    /**
+     * @dev Represents the total number of gons in the system.
+     * It is calculated as the maximum value of uint256 minus the remainder of dividing the maximum value of uint256 by the initial supply of fragments.
+     */
     uint256 private constant TOTAL_GONS =
         type(uint256).max - (type(uint256).max % INITIAL_FRAGMENTS_SUPPLY);
+    
+    /**
+     * @dev Represents the maximum supply of the token.
+     */
     uint256 private constant MAX_SUPPLY = type(uint128).max;
-    uint256 private constant MAX_REBASE_FREQUENCY = 1800;
+
+    /**
+     * @dev Represents the maximum rebase frequency.
+     */
+    uint256 private constant MAX_REBASE_FREQUENCY = 3600;
+
+    /**
+     * @dev Represents the maximum fee rate for a transaction.
+     */
     uint256 private constant MAX_FEE_RATE = 18;
+
+    /**
+     * @dev Represents the maximum fee for buying tokens.
+     */
     uint256 private constant MAX_FEE_BUY = 13;
+
+    /**
+     * @dev The maximum fee for selling tokens.
+     */
     uint256 private constant MAX_FEE_SELL = 18;
 
     uint256 public rewardYield;
@@ -89,6 +125,7 @@ contract Eutopia is
     ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
         __Ownable_init(_initialOwner);
+        __ReentrancyGuard_init();
 
         rewardYield = 3958125;
         rewardYieldDenominator = 1e10;
