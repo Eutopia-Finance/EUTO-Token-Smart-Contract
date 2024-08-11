@@ -30,7 +30,7 @@ contract Eutopia is
     /**
      * @dev The initial supply of fragments for the Eutopia token.
      */
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 24 * 10e8 * 10e18;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 40 * 10e8 * 10e18;
 
     /**
      * @dev Represents the total number of gons in the system.
@@ -47,7 +47,7 @@ contract Eutopia is
     /**
      * @dev Represents the maximum rebase frequency.
      */
-    uint256 private constant MAX_REBASE_FREQUENCY = 3600;
+    uint256 private constant MAX_REBASE_FREQUENCY = 3600 / 4;
 
     /**
      * @dev Represents the maximum fee rate for a transaction.
@@ -109,24 +109,91 @@ contract Eutopia is
      */
     address public essrReceiver;
 
+    /**
+     * @dev Represents the liquidity fee for the Eutopia token.
+     */
     uint256 public liquidityFee;
+
+    /**
+     * @dev Represents the treasury fee for the Eutopia token.
+     */
     uint256 public treasuryFee;
+
+    /**
+     * @dev Represents the buy fee for ESSR tokens.
+     */
     uint256 public buyFeeEssr;
+
+    /**
+     * @dev The sellFeeTreasury variable represents the amount of sell fee that will be sent to the treasury.
+     */
     uint256 public sellFeeTreasury;
+
+    /**
+     * @dev Represents the total buy fee in the Eutopia contract.
+     */
     uint256 public totalBuyFee;
+
+    /**
+     * @dev Represents the total sell fee for the Eutopia token.
+     */
     uint256 public totalSellFee;
+
+    /**
+     * @dev Represents the denominator used for calculating fees.
+     */
     uint256 public feeDenominator;
 
+    /**
+     * @dev A mapping to keep track of allowed fragments between addresses.
+     */
     mapping(address => mapping(address => uint256)) private _allowedFragments;
+
+    /**
+     * @dev Mapping of addresses to their corresponding gon balances.
+     */
     mapping(address => uint256) private _gonBalances;
+
+    /**
+     * @dev A mapping to keep track of addresses exempt from fees.
+     */
     mapping(address => bool) private _isFeeExempt;
+
+    /**
+     * @dev Represents the total supply of tokens.
+     */
     uint256 private _totalSupply;
+
+    /**
+     * @dev Represents the conversion rate between gons and fragments.
+     */
     uint256 private _gonsPerFragment;
+
+    /**
+     * @dev Represents the threshold for swapping tokens.
+     */
     uint256 private _gonSwapThreshold;
+
+    /**
+     * @dev Indicates whether the contract is currently in a swap operation.
+     */
     bool private _inSwap;
+
+    /**
+     * @dev The address of the Uniswap V2 Router contract.
+     */
     IUniswapV2Router02 public uniswapRouter;
+
+    /**
+     * @dev The address of the Uniswap pair for the Eutopia token.
+     */
     address public uniswapPair;
 
+    /**
+     * @dev Modifier to indicate that a function is currently swapping.
+     * It sets the `_inSwap` flag to `true` before executing the function,
+     * and sets it back to `false` after the function is executed.
+     */
     modifier swapping() {
         _inSwap = true;
         _;
