@@ -11,61 +11,201 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "hardhat/console.sol";
 
-/**
- * @title Eutopia
- * @dev This contract represents the Eutopia token smart contract. It is an ERC20 token that is upgradeable and includes functionality for ownership and reentrancy guard.
- */
 contract Eutopia is
     Initializable,
     ERC20Upgradeable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    /**
+     * @dev Represents the zero address.
+     */
     address private constant ZERO = 0x0000000000000000000000000000000000000000;
+
+    /**
+     * @dev Represents the address constant for the dead address.
+     */
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 23 * 10e8 * 10e18;
+    
+    /**
+     * @dev The initial supply of fragments for the Eutopia token.
+     */
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 40 * 10e8 * 10e18;
+
+    /**
+     * @dev Represents the total number of gons in the system.
+     * It is calculated as the maximum value of uint256 minus the remainder of dividing the maximum value of uint256 by the initial supply of fragments.
+     */
     uint256 private constant TOTAL_GONS =
         type(uint256).max - (type(uint256).max % INITIAL_FRAGMENTS_SUPPLY);
+    
+    /**
+     * @dev Represents the maximum supply of the token.
+     */
     uint256 private constant MAX_SUPPLY = type(uint128).max;
-    uint256 private constant MAX_REBASE_FREQUENCY = 1800;
+
+    /**
+     * @dev Represents the maximum rebase frequency.
+     */
+    uint256 private constant MAX_REBASE_FREQUENCY = 3600 / 4;
+
+    /**
+     * @dev Represents the maximum fee rate for a transaction.
+     */
     uint256 private constant MAX_FEE_RATE = 18;
+
+    /**
+     * @dev Represents the maximum fee for buying tokens.
+     */
     uint256 private constant MAX_FEE_BUY = 13;
+
+    /**
+     * @dev The maximum fee for selling tokens.
+     */
     uint256 private constant MAX_FEE_SELL = 18;
 
+    /**
+     * @dev Represents the reward yield for the Eutopia token.
+     */
     uint256 public rewardYield;
-    uint256 public rewardYieldDenominator;
-    uint256 public rebaseFrequency;
-    uint256 public nextRebase;
-    uint256 public targetLiquidity;
-    uint256 public targetLiquidityDenominator;
-    address public liquidityReceiver;
-    address public treasuryReceiver;
-    address public riskFreeValueReceiver;
 
+    /**
+     * @dev Represents the reward yield denominator.
+     */
+    uint256 public rewardYieldDenominator;
+
+    /**
+     * @dev Specifies the frequency of the rebase operation.
+     */
+    uint256 public rebaseFrequency;
+
+    /**
+     * @dev Represents the timestamp for the next rebase.
+     */
+    uint256 public nextRebase;
+
+    /**
+     * @dev Represents the target liquidity of the contract.
+     */
+    uint256 public targetLiquidity;
+
+    /**
+     * @dev Represents the target liquidity denominator.
+     */
+    uint256 public targetLiquidityDenominator;
+
+    /**
+     * @dev The address that will receive the liquidity.
+     */
+    address public liquidityReceiver;
+
+    /**
+     * @dev The address of the treasury receiver.
+     */
+    address public treasuryReceiver;
+
+    /**
+     * @dev The address of the ESSR receiver.
+     */
+    address public essrReceiver;
+
+    /**
+     * @dev Represents the liquidity fee for the Eutopia token.
+     */
     uint256 public liquidityFee;
+
+    /**
+     * @dev Represents the treasury fee for the Eutopia token.
+     */
     uint256 public treasuryFee;
+
+    /**
+     * @dev Represents the buy fee for ESSR tokens.
+     */
     uint256 public buyFeeEssr;
+
+    /**
+     * @dev The sellFeeTreasury variable represents the amount of sell fee that will be sent to the treasury.
+     */
     uint256 public sellFeeTreasury;
+
+    /**
+     * @dev Represents the total buy fee in the Eutopia contract.
+     */
     uint256 public totalBuyFee;
+
+    /**
+     * @dev Represents the total sell fee for the Eutopia token.
+     */
     uint256 public totalSellFee;
+
+    /**
+     * @dev Represents the denominator used for calculating fees.
+     */
     uint256 public feeDenominator;
 
+    /**
+     * @dev A mapping to keep track of allowed fragments between addresses.
+     */
     mapping(address => mapping(address => uint256)) private _allowedFragments;
+
+    /**
+     * @dev Mapping of addresses to their corresponding gon balances.
+     */
     mapping(address => uint256) private _gonBalances;
+
+    /**
+     * @dev A mapping to keep track of addresses exempt from fees.
+     */
     mapping(address => bool) private _isFeeExempt;
+
+    /**
+     * @dev Represents the total supply of tokens.
+     */
     uint256 private _totalSupply;
+
+    /**
+     * @dev Represents the conversion rate between gons and fragments.
+     */
     uint256 private _gonsPerFragment;
+
+    /**
+     * @dev Represents the threshold for swapping tokens.
+     */
     uint256 private _gonSwapThreshold;
+
+    /**
+     * @dev Indicates whether the contract is currently in a swap operation.
+     */
     bool private _inSwap;
+
+    /**
+     * @dev The address of the Uniswap V2 Router contract.
+     */
     IUniswapV2Router02 public uniswapRouter;
+
+    /**
+     * @dev The address of the Uniswap pair for the Eutopia token.
+     */
     address public uniswapPair;
 
+    /**
+     * @dev Modifier to indicate that a function is currently swapping.
+     * It sets the `_inSwap` flag to `true` before executing the function,
+     * and sets it back to `false` after the function is executed.
+     */
     modifier swapping() {
         _inSwap = true;
         _;
         _inSwap = false;
     }
 
+    /**
+     * @dev Modifier to check if the recipient address is valid.
+     * @param _to The address of the recipient.
+     * Requirements:
+     * - The recipient address must not be the zero address.
+     */
     modifier validRecipient(address _to) {
         require(_to != ZERO, "Eutopia: Invalid recipient");
         _;
@@ -93,6 +233,7 @@ contract Eutopia is
     ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
         __Ownable_init(_initialOwner);
+        __ReentrancyGuard_init();
 
         rewardYield = 3958125;
         rewardYieldDenominator = 1e10;
@@ -102,7 +243,7 @@ contract Eutopia is
         targetLiquidityDenominator = 100;
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _essrReceiver;
+        essrReceiver = _essrReceiver;
 
         liquidityFee = 5;
         treasuryFee = 5;
@@ -118,7 +259,7 @@ contract Eutopia is
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
         _gonBalances[msg.sender] = TOTAL_GONS;
         _isFeeExempt[treasuryReceiver] = true;
-        _isFeeExempt[riskFreeValueReceiver] = true;
+        _isFeeExempt[essrReceiver] = true;
         _isFeeExempt[address(this)] = true;
         _isFeeExempt[msg.sender] = true;
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
@@ -477,7 +618,7 @@ contract Eutopia is
         }
 
         if (amountToEssr > 0) {
-            _swapTokensForETH(amountToEssr, riskFreeValueReceiver);
+            _swapTokensForETH(amountToEssr, essrReceiver);
         }
 
         if (amountToTreasury > 0) {
@@ -619,10 +760,9 @@ contract Eutopia is
 
     /**
      * @dev Executes a manual rebase of the token supply.
-     * Only the contract owner can call this function.
      * This function is non-reentrant.
      */
-    function manualRebase() external onlyOwner nonReentrant {
+    function manualRebase() external nonReentrant {
         require(!_inSwap, "Euotopia: Swap in progress");
         require(nextRebase <= block.timestamp, "Eutoipa: Too soon");
 
@@ -684,7 +824,7 @@ contract Eutopia is
      * 
      * @param _liquidityReceiver The address of the liquidity receiver.
      * @param _treasuryReceiver The address of the treasury receiver.
-     * @param _essrReceiver The address of the risk-free value receiver.
+     * @param _essrReceiver The address of the elastic supply stability reserve value receiver.
      */
     function setFeeReceivers(
         address _liquidityReceiver,
@@ -693,7 +833,7 @@ contract Eutopia is
     ) external onlyOwner {
         liquidityReceiver = _liquidityReceiver;
         treasuryReceiver = _treasuryReceiver;
-        riskFreeValueReceiver = _essrReceiver;
+        essrReceiver = _essrReceiver;
         emit SetFeeReceivers(
             _liquidityReceiver,
             _treasuryReceiver,
@@ -704,7 +844,7 @@ contract Eutopia is
     /**
      * @dev Sets the fees for the Eutopia token.
      * @param _liquidityFee The fee percentage for liquidity.
-     * @param _riskFreeValue The fee percentage for risk-free value.
+     * @param _essrValue The fee percentage for elastic supply stability reserve.
      * @param _treasuryFee The fee percentage for the treasury.
      * @param _sellFeeTreasury The fee percentage for selling to the treasury.
      * @param _feeDenominator The denominator used to calculate the fees.
@@ -713,21 +853,21 @@ contract Eutopia is
      */
     function setFees(
         uint256 _liquidityFee,
-        uint256 _riskFreeValue,
+        uint256 _essrValue,
         uint256 _treasuryFee,
         uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     ) external onlyOwner {
         require(
             _liquidityFee <= MAX_FEE_RATE &&
-                _riskFreeValue <= MAX_FEE_RATE &&
+                _essrValue <= MAX_FEE_RATE &&
                 _treasuryFee <= MAX_FEE_RATE &&
                 _sellFeeTreasury <= MAX_FEE_RATE,
             "Eutoipa: Fee too high"
         );
 
         liquidityFee = _liquidityFee;
-        buyFeeEssr = _riskFreeValue;
+        buyFeeEssr = _essrValue;
         treasuryFee = _treasuryFee;
         sellFeeTreasury = _sellFeeTreasury;
         totalBuyFee = liquidityFee + treasuryFee + buyFeeEssr;
@@ -741,7 +881,7 @@ contract Eutopia is
 
         emit SetFees(
             _liquidityFee,
-            _riskFreeValue,
+            _essrValue,
             _treasuryFee,
             _sellFeeTreasury,
             _feeDenominator
@@ -824,7 +964,7 @@ contract Eutopia is
     );
     event SetFees(
         uint256 _liquidityFee,
-        uint256 _riskFreeValue,
+        uint256 _essrValue,
         uint256 _treasuryFee,
         uint256 _sellFeeTreasury,
         uint256 _feeDenominator
