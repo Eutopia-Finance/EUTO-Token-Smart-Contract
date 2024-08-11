@@ -47,7 +47,7 @@ contract Eutopia is
     /**
      * @dev Represents the maximum rebase frequency.
      */
-    uint256 private constant MAX_REBASE_FREQUENCY = 3600;
+    uint256 private constant MAX_REBASE_FREQUENCY = 3600 * 24;
 
     /**
      * @dev Represents the maximum fee rate for a transaction.
@@ -242,7 +242,7 @@ contract Eutopia is
         rewardYield = 2081456;
         rewardYieldDenominator = 1e10;
         rebaseFrequency = 3600 / 4;
-        nextRebase = block.timestamp + 3600 * 24 * 365;
+        nextRebase = block.timestamp + 3600 / 4;
         targetLiquidity = 50;
         targetLiquidityDenominator = 100;
         liquidityReceiver = _liquidityReceiver;
@@ -981,7 +981,7 @@ contract Eutopia is
 
     /**
      * @dev Emitted when a rebase operation is performed.
-     * 
+     *
      * @param _epoch The epoch number of the rebase operation.
      * @param _totalSupply The total supply after the rebase operation.
      */
@@ -995,7 +995,7 @@ contract Eutopia is
 
     /**
      * @dev Emits an event when the fee exemption status is set for an address.
-     * 
+     *
      * @param _addr The address for which the fee exemption status is set.
      * @param _value The new fee exemption status.
      */
