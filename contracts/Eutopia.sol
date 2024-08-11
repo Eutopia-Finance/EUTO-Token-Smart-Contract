@@ -47,7 +47,7 @@ contract Eutopia is
     /**
      * @dev Represents the maximum rebase frequency.
      */
-    uint256 private constant MAX_REBASE_FREQUENCY = 3600 / 4;
+    uint256 private constant MAX_REBASE_FREQUENCY = 3600;
 
     /**
      * @dev Represents the maximum fee rate for a transaction.
@@ -262,10 +262,12 @@ contract Eutopia is
         _allowedFragments[address(this)][uniswapPair] = type(uint256).max;
         _allowedFragments[address(this)][address(this)] = type(uint256).max;
         _gonBalances[msg.sender] = TOTAL_GONS;
+
         _isFeeExempt[treasuryReceiver] = true;
         _isFeeExempt[essrReceiver] = true;
         _isFeeExempt[address(this)] = true;
         _isFeeExempt[msg.sender] = true;
+
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _gonsPerFragment = TOTAL_GONS / _totalSupply;
         _gonSwapThreshold = TOTAL_GONS / 1000;
@@ -767,8 +769,8 @@ contract Eutopia is
      * This function is non-reentrant.
      */
     function manualRebase() external nonReentrant {
-        require(!_inSwap, "Euotopia: Swap in progress");
-        require(nextRebase <= block.timestamp, "Eutoipa: Too soon");
+        require(!_inSwap, "Eutopia: Swap in progress");
+        require(nextRebase <= block.timestamp, "Eutopia: Too soon");
 
         int256 supplyDelta = int256(
             (_totalSupply * rewardYield) / rewardYieldDenominator
@@ -786,7 +788,7 @@ contract Eutopia is
      * - Only the contract owner can call this function.
      */
     function setFeeExempt(address _addr, bool _value) external onlyOwner {
-        require(_isFeeExempt[_addr] != _value, "Eutoipa: Value already set");
+        require(_isFeeExempt[_addr] != _value, "Eutopia: Value already set");
         _isFeeExempt[_addr] = _value;
         emit SetFeeExempted(_addr, _value);
     }
@@ -867,7 +869,7 @@ contract Eutopia is
                 _essrValue <= MAX_FEE_RATE &&
                 _treasuryFee <= MAX_FEE_RATE &&
                 _sellFeeTreasury <= MAX_FEE_RATE,
-            "Eutoipa: Fee too high"
+            "Eutopia: Fee too high"
         );
 
         liquidityFee = _liquidityFee;
@@ -951,27 +953,88 @@ contract Eutopia is
         emit SetNextRebase(_nextRebase);
     }
 
+    /**
+     * @dev Event triggered when swapping tokens back.
+     * @param _contractTokenBalance The balance of tokens held by the contract.
+     * @param _amountToLiquify The amount of tokens to be added to the liquidity pool.
+     * @param _amountToEssr The amount of tokens to be distributed to ESSR holders.
+     * @param _amountToTreasury The amount of tokens to be sent to the treasury.
+     */
     event SwapBack(
         uint256 _contractTokenBalance,
         uint256 _amountToLiquify,
         uint256 _amountToEssr,
         uint256 _amountToTreasury
     );
+
+    /**
+     * @dev Emitted when tokens are swapped and liquidity is added to the contract.
+     * @param _tokensSwapped The amount of tokens that were swapped.
+     * @param _ethReceived The amount of ETH received from the swap.
+     * @param _tokensIntoLiquidity The amount of tokens added to the liquidity pool.
+     */
     event SwapAndLiquify(
         uint256 _tokensSwapped,
         uint256 _ethReceived,
-        uint256 _tokensIntoLiqudity
+        uint256 _tokensIntoLiquidity
     );
+
+    /**
+     * @dev Emitted when a rebase operation is performed.
+     * 
+     * @param _epoch The epoch number of the rebase operation.
+     * @param _totalSupply The total supply after the rebase operation.
+     */
     event LogRebase(uint256 indexed _epoch, uint256 _totalSupply);
+
+    /**
+     * @dev Emitted when a manual rebase is triggered.
+     * @param _supplyDelta The change in token supply.
+     */
     event ManualRebase(int256 _supplyDelta);
+
+    /**
+     * @dev Emits an event when the fee exemption status is set for an address.
+     * 
+     * @param _addr The address for which the fee exemption status is set.
+     * @param _value The new fee exemption status.
+     */
     event SetFeeExempted(address indexed _addr, bool _value);
+
+    /**
+     * @dev Emitted when the target liquidity is set.
+     * @param _target The target liquidity value.
+     * @param _accuracy The accuracy of the target liquidity value.
+     */
     event SetTargetLiquidity(uint256 _target, uint256 _accuracy);
+
+    /**
+     * @dev Emits an event to set the swap back settings.
+     * @param _num The numerator value.
+     * @param _denom The denominator value.
+     */
     event SetSwapBackSettings(uint256 _num, uint256 _denom);
+
+    /**
+     * @dev Emits an event when the fee receivers are set.
+     * @param _liquidityReceiver The address of the liquidity receiver.
+     * @param _treasuryReceiver The address of the treasury receiver.
+     * @param _essrReceiver The address of the ESSR receiver.
+     */
     event SetFeeReceivers(
         address indexed _liquidityReceiver,
         address indexed _treasuryReceiver,
         address indexed _essrReceiver
     );
+
+    /**
+     * @dev Event emitted when the fees are set.
+     * @param _liquidityFee The liquidity fee value.
+     * @param _essrValue The ESSR value.
+     * @param _treasuryFee The treasury fee value.
+     * @param _sellFeeTreasury The sell fee treasury value.
+     * @param _feeDenominator The fee denominator value.
+     */
     event SetFees(
         uint256 _liquidityFee,
         uint256 _essrValue,
@@ -979,8 +1042,30 @@ contract Eutopia is
         uint256 _sellFeeTreasury,
         uint256 _feeDenominator
     );
+
+    /**
+     * @dev Emitted when the stuck balance is cleared for a specific receiver.
+     * @param _receiver The address of the receiver whose stuck balance is cleared.
+     */
     event ClearStuckBalance(address indexed _receiver);
+
+    /**
+     * @dev Emits an event to set the rebase frequency.
+     * @param _rebaseFrequency The new rebase frequency value.
+     */
     event SetRebaseFrequency(uint256 _rebaseFrequency);
+
+    /**
+     * @dev Emitted when the reward yield and reward yield denominator are set.
+     * @param _rewardYield The new reward yield value.
+     * @param _rewardYieldDenominator The new reward yield denominator value.
+     */
     event SetRewardYield(uint256 _rewardYield, uint256 _rewardYieldDenominator);
+
+    /**
+     * @dev Emits an event to set the next rebase value.
+     *
+     * @param _nextRebase The value to set as the next rebase.
+     */
     event SetNextRebase(uint256 _nextRebase);
 }
