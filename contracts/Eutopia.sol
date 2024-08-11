@@ -26,7 +26,7 @@ contract Eutopia is
      * @dev Represents the address constant for the dead address.
      */
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    
+
     /**
      * @dev The initial supply of fragments for the Eutopia token.
      */
@@ -38,7 +38,7 @@ contract Eutopia is
      */
     uint256 private constant TOTAL_GONS =
         type(uint256).max - (type(uint256).max % INITIAL_FRAGMENTS_SUPPLY);
-    
+
     /**
      * @dev Represents the maximum supply of the token.
      */
@@ -211,7 +211,11 @@ contract Eutopia is
         _;
     }
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
+    /**
+     * @custom:oz-upgrades-unsafe-allow constructor
+     * @dev Constructor function.
+     * It disables initializers.
+     */
     constructor() {
         _disableInitializers();
     }
@@ -235,10 +239,10 @@ contract Eutopia is
         __Ownable_init(_initialOwner);
         __ReentrancyGuard_init();
 
-        rewardYield = 3958125;
+        rewardYield = 2081456;
         rewardYieldDenominator = 1e10;
-        rebaseFrequency = 1800;
-        nextRebase = block.timestamp + 31536000;
+        rebaseFrequency = 3600 / 4;
+        nextRebase = block.timestamp + 3600 * 24 * 365;
         targetLiquidity = 50;
         targetLiquidityDenominator = 100;
         liquidityReceiver = _liquidityReceiver;
@@ -412,14 +416,14 @@ contract Eutopia is
 
     /**
      * @dev Transfers tokens from the caller's address to a specified recipient.
-     * 
+     *
      * Emits a {Transfer} event indicating the transfer of tokens.
-     * 
+     *
      * Requirements:
      * - `_to` cannot be the zero address.
      * - The caller must have a balance of at least `_value` tokens.
      * - The recipient must be a valid recipient (see {validRecipient} modifier).
-     * 
+     *
      * @param _to The address to transfer tokens to.
      * @param _value The amount of tokens to transfer.
      * @return A boolean value indicating whether the transfer was successful.
@@ -434,11 +438,11 @@ contract Eutopia is
 
     /**
      * @dev Internal function to perform a basic transfer of tokens.
-     * 
+     *
      * @param _from The address from which the tokens are being transferred.
      * @param _to The address to which the tokens are being transferred.
      * @param _amount The amount of tokens being transferred.
-     * 
+     *
      * @return A boolean indicating whether the transfer was successful or not.
      */
     function _basicTransfer(
@@ -457,11 +461,11 @@ contract Eutopia is
 
     /**
      * @dev Internal function to transfer tokens from one address to another.
-     * 
+     *
      * @param _sender The address sending the tokens.
      * @param _recipient The address receiving the tokens.
      * @param _amount The amount of tokens to transfer.
-     * 
+     *
      * @return A boolean indicating whether the transfer was successful or not.
      */
     function _transferFrom(
@@ -503,15 +507,15 @@ contract Eutopia is
 
     /**
      * @dev Transfers tokens from one address to another.
-     * 
+     *
      * Emits a {Transfer} event.
-     * 
+     *
      * Requirements:
      * - `_from` cannot be the zero address.
      * - `_to` cannot be the zero address.
      * - `_from` must have a balance of at least `_value`.
      * - The caller must have allowance for `_from`'s tokens of at least `_value`.
-     * 
+     *
      * @param _from The address to transfer tokens from.
      * @param _to The address to transfer tokens to.
      * @param _value The amount of tokens to transfer.
@@ -821,7 +825,7 @@ contract Eutopia is
     /**
      * @dev Sets the fee receivers for the Eutopia token.
      * Can only be called by the contract owner.
-     * 
+     *
      * @param _liquidityReceiver The address of the liquidity receiver.
      * @param _treasuryReceiver The address of the treasury receiver.
      * @param _essrReceiver The address of the elastic supply stability reserve value receiver.
@@ -874,7 +878,10 @@ contract Eutopia is
         totalSellFee = totalBuyFee + sellFeeTreasury;
 
         require(totalBuyFee <= MAX_FEE_BUY, "Eutopia: Total BUY fee too high");
-        require(totalSellFee <= MAX_FEE_SELL, "Eutopia: Total SELL fee too high");
+        require(
+            totalSellFee <= MAX_FEE_SELL,
+            "Eutopia: Total SELL fee too high"
+        );
 
         feeDenominator = _feeDenominator;
         require(totalBuyFee < feeDenominator / 4, "Eutopia: Buy fee too high");
@@ -907,7 +914,10 @@ contract Eutopia is
      * @notice Emits a SetRebaseFrequency event with the new rebase frequency.
      */
     function setRebaseFrequency(uint256 _rebaseFrequency) external onlyOwner {
-        require(_rebaseFrequency <= MAX_REBASE_FREQUENCY, "Eutopia: Invalid rebase frequency");
+        require(
+            _rebaseFrequency <= MAX_REBASE_FREQUENCY,
+            "Eutopia: Invalid rebase frequency"
+        );
         rebaseFrequency = _rebaseFrequency;
         emit SetRebaseFrequency(_rebaseFrequency);
     }
