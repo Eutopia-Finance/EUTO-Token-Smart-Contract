@@ -13,6 +13,13 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "hardhat/console.sol";
 
 /**
+ * ███████╗██╗   ██╗████████╗ ██████╗ ███████╗ ██╗ █████╗
+ * ██╔════╝██║   ██║╚══██╔══╝██╔═══██╗██╔═══██╗██║██╔══██╗
+ * ███████╗██║   ██║   ██║   ██║   ██║███████╔╝██║███████║
+ * ██╔════╝██║   ██║   ██║   ██║   ██║██╔════╝ ██║██╔══██║
+ * ███████╗╚██████╔╝   ██║   ╚██████╔╝██║      ██║██║  ██║
+ * ╚══════╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝      ╚═╝╚═╝  ╚═╝
+ * 
  * @title Eutopia Token Contract
  * @author 0xAmbassador, 0xTycoon
  * @dev A smart contract for the Eutopia Autostaking Protocol.
