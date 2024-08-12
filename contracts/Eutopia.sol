@@ -12,6 +12,13 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "hardhat/console.sol";
 
+/**
+ * @title Eutopia Token Contract
+ * @author 0xAmbassador, 0xTycoon
+ * @dev A smart contract for the Eutopia Autostaking Protocol.
+ * @notice This contract implements an upgradeable ERC20 token with additional functionalities.
+ * @notice This contract uses OpenZeppelin's upgradeable libraries and follows the upgradeable proxy pattern.
+ */
 contract Eutopia is
     Initializable,
     ERC20Upgradeable,
@@ -19,8 +26,7 @@ contract Eutopia is
     ReentrancyGuardUpgradeable
 {
     /**
-     * @title Eutopia
-     * @dev A smart contract for the Eutopia token.
+     * @dev Address utility library for performing address operations.
      */
     using Address for address payable;
 
