@@ -937,6 +937,13 @@ contract Eutopia is
         emit ClearStuckBalance(_receiver);
     }
 
+    /**
+     * @dev Sets the auto rebase feature for the token.
+     * @param _autoRebase The new value for the auto rebase feature.
+     * Requirements:
+     * - Only the contract owner can call this function.
+     * Emits a `SetAutoRebase` event.
+     */
     function setAutoRebase(bool _autoRebase) external onlyOwner {
         require(autoRebase != _autoRebase, "Eutopia: Value already set");
         autoRebase = _autoRebase;
