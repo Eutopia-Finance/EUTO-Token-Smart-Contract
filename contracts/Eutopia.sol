@@ -878,11 +878,14 @@ contract Eutopia is
         uint256 _feeDenominator
     ) external onlyOwner {
         require(
-            _liquidityFee <= MAX_FEE_RATE &&
-                _essrValue <= MAX_FEE_RATE &&
-                _treasuryFee <= MAX_FEE_RATE &&
-                _sellFeeTreasury <= MAX_FEE_RATE,
-            "Eutopia: Fee too high"
+            _liquidityFee <= MAX_FEE_RATE,
+            "Eutopia: Liquidity fee too high"
+        );
+        require(_essrValue <= MAX_FEE_RATE, "Eutopia: ESSR value too high");
+        require(_treasuryFee <= MAX_FEE_RATE, "Eutopia: Treasury fee too high");
+        require(
+            _sellFeeTreasury <= MAX_FEE_RATE,
+            "Eutopia: Sell fee treasury too high"
         );
 
         liquidityFee = _liquidityFee;
