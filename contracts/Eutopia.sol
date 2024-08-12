@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "hardhat/console.sol";
 
 contract Eutopia is
@@ -17,6 +18,12 @@ contract Eutopia is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    /**
+     * @title Eutopia
+     * @dev A smart contract for the Eutopia token.
+     */
+    using Address for address payable;
+
     /**
      * @dev Represents the zero address.
      */
@@ -904,7 +911,7 @@ contract Eutopia is
      */
     function clearStuckBalance(address _receiver) external onlyOwner {
         uint256 balance = address(this).balance;
-        payable(_receiver).transfer(balance);
+        Address.sendValue(payable(_receiver), balance);
         emit ClearStuckBalance(_receiver);
     }
 
