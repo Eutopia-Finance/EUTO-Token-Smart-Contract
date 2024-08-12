@@ -19,7 +19,6 @@ import "hardhat/console.sol";
  * ██╔════╝██║   ██║   ██║   ██║   ██║██╔════╝ ██║██╔══██║
  * ███████╗╚██████╔╝   ██║   ╚██████╔╝██║      ██║██║  ██║
  * ╚══════╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝      ╚═╝╚═╝  ╚═╝
- * 
  * @title Eutopia Token Contract
  * @author 0xAmbassador, 0xTycoon
  * @dev A smart contract for the Eutopia Autostaking Protocol.
@@ -200,6 +199,11 @@ contract Eutopia is
     bool private _inSwap;
 
     /**
+     * @dev Indicates whether the auto rebase feature is enabled or not.
+     */
+    bool public autoRebase;
+
+    /**
      * @dev The address of the Uniswap V2 Router contract.
      */
     IUniswapV2Router02 public uniswapRouter;
@@ -291,12 +295,14 @@ contract Eutopia is
         _totalSupply = INITIAL_FRAGMENTS_SUPPLY;
         _gonsPerFragment = TOTAL_GONS / _totalSupply;
         _gonSwapThreshold = TOTAL_GONS / 1000;
+        _inSwap = false;
+        autoRebase = false;
+
         uniswapRouter = IUniswapV2Router02(_uniswapRouter);
         uniswapPair = IUniswapV2Factory(uniswapRouter.factory()).createPair(
             address(this),
             uniswapRouter.WETH()
         );
-        _inSwap = false;
 
         emit Transfer(ZERO, msg.sender, _totalSupply);
     }
@@ -518,7 +524,7 @@ contract Eutopia is
             gonAmountReceived / _gonsPerFragment
         );
 
-        if (_shouldRebase()) {
+        if (_shouldRebase() && autoRebase) {
             _rebase();
             if (uniswapPair != _sender && uniswapPair != _recipient)
                 manualSync();
@@ -932,6 +938,19 @@ contract Eutopia is
     }
 
     /**
+     * @dev Sets the auto rebase feature for the token.
+     * @param _autoRebase The new value for the auto rebase feature.
+     * Requirements:
+     * - Only the contract owner can call this function.
+     * Emits a `SetAutoRebase` event.
+     */
+    function setAutoRebase(bool _autoRebase) external onlyOwner {
+        require(autoRebase != _autoRebase, "Eutopia: Value already set");
+        autoRebase = _autoRebase;
+        emit SetAutoRebase(_autoRebase);
+    }
+
+    /**
      * @dev Sets the rebase frequency for the token.
      * @param _rebaseFrequency The new rebase frequency to be set.
      * @notice Only the contract owner can call this function.
@@ -1071,6 +1090,12 @@ contract Eutopia is
      * @param _receiver The address of the receiver whose stuck balance is cleared.
      */
     event ClearStuckBalance(address indexed _receiver);
+
+    /**
+     * @dev Emits an event to set the autoRebase flag.
+     * @param _autoRebase The new value of the autoRebase flag.
+     */
+    event SetAutoRebase(bool _autoRebase);
 
     /**
      * @dev Emits an event to set the rebase frequency.
