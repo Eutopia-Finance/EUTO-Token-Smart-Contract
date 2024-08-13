@@ -1018,15 +1018,16 @@ contract Eutopia is
      * Overrides the _update function from ERC20Upgradeable and ERC20PausableUpgradeable contracts.
      * Calls the _update function from the parent contract to update the balance.
      * The following functions are overrides required by Solidity.
-     * 
+     *
      * @param from The address from which the tokens are transferred.
      * @param to The address to which the tokens are transferred.
      * @param value The amount of tokens being transferred.
      */
-    function _update(address from, address to, uint256 value)
-        internal
-        override(ERC20Upgradeable, ERC20PausableUpgradeable)
-    {
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    ) internal override(ERC20Upgradeable, ERC20PausableUpgradeable) {
         super._update(from, to, value);
     }
 
