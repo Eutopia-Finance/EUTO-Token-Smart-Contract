@@ -2,23 +2,23 @@
 // Compatible with OpenZeppelin Contracts ^5.0.0
 pragma solidity 0.8.20;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
+import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {ERC20PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {IUniswapV2Factory} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import {IUniswapV2Pair} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /**
- * ███████╗██╗   ██╗████████╗ ██████╗ ███████╗ ██╗ █████╗
- * ██╔════╝██║   ██║╚══██╔══╝██╔═══██╗██╔═══██╗██║██╔══██╗
- * ███████╗██║   ██║   ██║   ██║   ██║███████╔╝██║███████║
- * ██╔════╝██║   ██║   ██║   ██║   ██║██╔════╝ ██║██╔══██║
- * ███████╗╚██████╔╝   ██║   ╚██████╔╝██║      ██║██║  ██║
- * ╚══════╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝      ╚═╝╚═╝  ╚═╝
+ *  ██████╗ ███████╗██╗   ██╗████████╗ ██████╗ ███████╗ ██╗ █████╗
+ * ███  ███╗██╔════╝██║   ██║╚══██╔══╝██╔═══██╗██╔═══██╗██║██╔══██╗
+ * █  ██  █║███████╗██║   ██║   ██║   ██║   ██║███████╔╝██║███████║
+ * ███  ███║██╔════╝██║   ██║   ██║   ██║   ██║██╔════╝ ██║██╔══██║
+ * ╚██████╔╝███████╗╚██████╔╝   ██║   ╚██████╔╝██║      ██║██║  ██║
+ *  ╚═════╝ ╚══════╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝      ╚═╝╚═╝  ╚═╝
  * @title Eutopia Token Contract
  * @author 0xAmbassador, 0xTycoon
  * @dev A smart contract for the Eutopia Autostaking Protocol.
@@ -28,6 +28,7 @@ import "hardhat/console.sol";
 contract Eutopia is
     Initializable,
     ERC20Upgradeable,
+    ERC20PausableUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
@@ -260,6 +261,7 @@ contract Eutopia is
         address _essrReceiver
     ) public initializer {
         __ERC20_init("Eutopia", "EUTO");
+        __ERC20Pausable_init();
         __Ownable_init(_initialOwner);
         __ReentrancyGuard_init();
 
@@ -993,6 +995,40 @@ contract Eutopia is
     function setNextRebase(uint256 _nextRebase) external onlyOwner {
         nextRebase = _nextRebase;
         emit SetNextRebase(_nextRebase);
+    }
+
+    /**
+     * @dev Pauses the contract.
+     * Can only be called by the contract owner.
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses the contract.
+     * Can only be called by the owner.
+     */
+    function unpause() public onlyOwner {
+        _unpause();
+    }
+
+    /**
+     * @dev Internal function to update the token balance of a given address.
+     * Overrides the _update function from ERC20Upgradeable and ERC20PausableUpgradeable contracts.
+     * Calls the _update function from the parent contract to update the balance.
+     * The following functions are overrides required by Solidity.
+     *
+     * @param from The address from which the tokens are transferred.
+     * @param to The address to which the tokens are transferred.
+     * @param value The amount of tokens being transferred.
+     */
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    ) internal override(ERC20Upgradeable, ERC20PausableUpgradeable) {
+        super._update(from, to, value);
     }
 
     /**
