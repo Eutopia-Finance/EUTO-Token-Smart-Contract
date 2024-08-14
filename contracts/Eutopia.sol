@@ -50,7 +50,7 @@ contract Eutopia is
     /**
      * @dev The initial supply of fragments for the Eutopia token.
      */
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 40 * 10e8 * 10e18;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 40 * 1e8 * 1e18;
 
     /**
      * @dev Represents the total number of gons in the system.
@@ -418,10 +418,10 @@ contract Eutopia is
     function getLiquidityBacking(
         uint256 _accuracy
     ) public view returns (uint256) {
-        uint256 liquidityBalance = balanceOf(uniswapPair) / 10e9;
+        uint256 liquidityBalance = balanceOf(uniswapPair) / 1e9;
         return
             (_accuracy * liquidityBalance * 2) /
-            (getCirculatingSupply() / 10e9);
+            (getCirculatingSupply() / 1e9);
     }
 
     /**
