@@ -24,19 +24,19 @@ async function main() {
   await instance.waitForDeployment();
 
   const instanceAddress = await instance.getAddress();
-  console.log("Proxy deployed to " + instanceAddress);
+  console.log(" --- Proxy deployed to " + instanceAddress);
 
   const implementationAddress = await getImplementationAddress(ethers.provider, instanceAddress);
-  console.log("Implementation deployed to " + implementationAddress);
+  console.log(" --- Implementation deployed to " + implementationAddress);
 
   try {
     await run("verify:verify", {
       address: implementationAddress,
       constructorArguments: [],
     });
-    console.log("Implementation verified on Etherscan");
+    console.log(" --- Implementation verified on Etherscan");
   } catch (error) {
-    console.error("Error verifying :", error);
+    console.error(" --- Error verifying :", error);
   }
 }
 
