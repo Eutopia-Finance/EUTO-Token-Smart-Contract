@@ -45,29 +45,29 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      // // sepolia: ETHERSCAN_API_KEY,
-      // // ethereum: ETHERSCAN_API_KEY,
-      sepolia: "sepolia",
-      ethereum: "ethereum",
+      sepolia: ETHERSCAN_API_KEY,// //
+      mainnet: ETHERSCAN_API_KEY,// //
+      // // sepolia: "sepolia",
+      // // ethereum: "ethereum",
     },
-    customChains: [ // //
-      {
-        network: "sepolia",
-        chainId: 11155111,
-        urls: {
-          apiURL: "https://api.routescan.io/v2/network/testnet/evm/11155111/etherscan",
-          browserURL: "https://11155111.testnet.routescan.io/"
-        }
-      },
-      {
-        network: "ethereum",
-        chainId: 1,
-        urls: {
-          apiURL: "https://api.routescan.io/v2/network/mainnet/evm/1/etherscan",
-          browserURL: "https://1.routescan.io"
-        }
-      }
-    ]
+    // // customChains: [
+    // //   {
+    // //     network: "sepolia",
+    // //     chainId: 11155111,
+    // //     urls: {
+    // //       apiURL: "https://api.routescan.io/v2/network/testnet/evm/11155111/etherscan",
+    // //       browserURL: "https://11155111.testnet.routescan.io/"
+    // //     }
+    // //   },
+    // //   {
+    // //     network: "ethereum",
+    // //     chainId: 1,
+    // //     urls: {
+    // //       apiURL: "https://api.routescan.io/v2/network/mainnet/evm/1/etherscan",
+    // //       browserURL: "https://1.routescan.io"
+    // //     }
+    // //   }
+    // // ]
   },
   mocha: {
     timeout: 600000
