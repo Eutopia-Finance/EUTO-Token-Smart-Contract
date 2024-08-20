@@ -5,11 +5,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const initialOwner = process.env.SEPOLIA_INITIAL_OWNER;
-const uniswapRouter = process.env.SEPOLIA_UNISWAP_ROUTER;
-const liquidityReceiver = process.env.SEPOLIA_LIQUIDITY_RECEIVER;
-const treasuryReceiver = process.env.SEPOLIA_TREASURY_RECEIVER;
-const essrReceiver = process.env.SEPOLIA_ESSR_RECEIVER;
+const initialOwner = process.env.ETHEREUM_INITIAL_OWNER;
+const uniswapRouter = process.env.ETHEREUM_UNISWAP_ROUTER;
+const liquidityReceiver = process.env.ETHEREUM_LIQUIDITY_RECEIVER;
+const treasuryReceiver = process.env.ETHEREUM_TREASURY_RECEIVER;
+const essrReceiver = process.env.ETHEREUM_ESSR_RECEIVER;
 
 async function main() {
   const InstanceFactory = await ethers.getContractFactory("Eutopia");
