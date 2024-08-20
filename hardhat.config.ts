@@ -10,6 +10,8 @@ const SEPOLIA_PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY || "";
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID || "";
+const ETHEREUM_PRIVATE_KEY = process.env.ETHEREUM_PRIVATE_KEY || "";
+const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL || "";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -32,11 +34,16 @@ const config: HardhatUserConfig = {
       chainId: 11155111,
       accounts: [SEPOLIA_PRIVATE_KEY],
     },
+    ethereum: {
+      url: 'https://eth.merkle.io',
+      accounts: [process.env.ETHEREUM_PRIVATE_KEY]
+    },
   },
   etherscan: {
     apiKey: {
       // // sepolia: ETHERSCAN_API_KEY,
       sepolia: "sepolia",
+      ethereum: "ethereum",
     },
     customChains: [ // //
       {
@@ -45,6 +52,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api.routescan.io/v2/network/testnet/evm/11155111/etherscan",
           browserURL: "https://11155111.testnet.routescan.io/"
+        }
+      },
+      {
+        network: "ethereum",
+        chainId: 1,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/mainnet/evm/1/etherscan",
+          browserURL: "https://1.routescan.io"
         }
       }
     ]
